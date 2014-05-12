@@ -34,7 +34,6 @@ if (!window.Survana) {
         req.onabort = error;
 
         req.open("POST", url, true);
-        req.setRequestHeader("Content-Length", post_data.length);
         req.send();
     }
 
