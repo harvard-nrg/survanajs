@@ -17,6 +17,10 @@ if (!window.Survana) {
         console.error("Survana.Queue: Survana.Storage is not available.");
     }
 
+    if (!Survana.Request) {
+        console.error("Survana.Queue: Survana.Request is not available.");
+    }
+
     var queue = {};
 
     /** Handles Survana.Storage errors
@@ -59,7 +63,7 @@ if (!window.Survana) {
      * @param error     {Function}  The error callback
      */
     function send(url, success, error) {
-        Survana.PostJSON(url,
+        Survana.Request.PostJSON(url,
             queue,
             function () {
                 console.log('PostJSON success', arguments);
