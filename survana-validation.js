@@ -285,7 +285,8 @@ if (!window.Survana) {
 
         elements = group_elements_by_name(form.elements);
 
-        var is_form_valid = true;
+        var is_form_valid = true,
+            result = {};
 
         //loop through all known fields
         for (field in config) {
@@ -327,12 +328,17 @@ if (!window.Survana) {
             //mark this field as valid
             if (is_valid) {
                 valid(field, field_config);
+                result[field] = values;
             }
 
             is_form_valid = is_form_valid && is_valid;
         }
 
-        return is_form_valid;
+        if (is_form_valid) {
+            return result;
+        }
+
+        return false;
     };
 
 

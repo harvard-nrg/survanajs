@@ -63,12 +63,17 @@ if (!window.Survana) {
             btn.setAttribute('disabled', 'disabled');
         }
 
+        var response = Survana.Validation.Validate(document.forms[0]);
+
         //if validation succeeds, go to the next form
-        if (Survana.Validation.Validate(document.forms[0])) {
+        if (response) {
             //don't do anything in designer mode if validation suceeded
             if (Survana.DesignerMode) {
                 return;
             }
+
+            console.log('response data', response);
+
             context.current++;
             //Store the incremented value of 'current'
             Survana.Storage.Set('current', context.current, function () {
