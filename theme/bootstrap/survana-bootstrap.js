@@ -524,7 +524,7 @@ var BootstrapEngine = function (doc) {
         var label = doc.createElement('label');
         label.setAttribute('class', 'btn btn-default');
         _html(label, field);
-        _value(elem, field);
+        _value(elem, field.value);
 
         console.log("button field:", field);
 
@@ -545,7 +545,7 @@ var BootstrapEngine = function (doc) {
         elem.setAttribute('type', field.type || "text");
         elem.setAttribute('class', 'form-control');
 
-        _value(elem, field);
+        _value(elem, field.value);
         _placeholder(elem, field);
 
         return elem;
