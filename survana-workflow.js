@@ -1,8 +1,9 @@
 /* survana-workflow.js
 
-Survana.Workflow contains function that are responsible for the control flow during the taking of a survey.
+Survana.Workflow contains functions that are responsible for the control flow during the taking of a survey.
 
-Dependencies: survana-storage.js
+Dependencies:   survana-storage.js
+                survana-queue.js
 
 @author Victor Petrov <victor_petrov@harvard.edu>
 @license BSD
@@ -17,9 +18,17 @@ if (!window.Survana) {
 
 (function (Survana) {
 
-    if (!Survana.DesignerMode && (!Survana.Storage || !Survana.Storage.IsAvailable)) {
-        console.error('Survana Storage is not available.');
-        return;
+    //when running the studies, make sure that all dependencies are available
+    if (!Survana.DesignerMode) {
+        if (!Survana.Storage || !Survana.Storage.IsAvailable) {
+            console.error('Survana Storage is not available.');
+            return;
+        }
+
+        if (!Survana.Queue) {
+            console.error('Survana Queue is not available.');
+            return;
+        }
     }
 
     var context = {
@@ -33,23 +42,50 @@ if (!window.Survana) {
      * @todo Log the error on the server, display notification to user
      * @param {Error} e
      */
-    function onStorageError(e) {
+    function on_storage_error(e) {
         console.error(e);
     }
 
-    function onFormLoaded() {
+    /** Called when the form is loaded.
+     * Loads current 'context' from Storage
+     */
+    function on_form_loaded() {
         Survana.Storage.Get(context, function (result) {
             context = result;
             context.current |= 0; //convert 'current' to a number
-        }, onStorageError);
+        }, on_storage_error);
     }
 
-    function onDOMContentLoaded () {
+    /** Callback for DOMContentLoaded Event.
+     * Calls on_form_loaded().
+     */
+    function on_dom_content_loaded () {
         //remove this handler
-        document.removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
+        document.removeEventListener("DOMContentLoaded", on_dom_content_loaded, false);
 
         //call the onLoad function
-        onFormLoaded();
+        on_form_loaded();
+    }
+
+    /** Increments the current form index, saves it into the Storage and loads the next URL.
+     */
+    function goto_next_form() {
+        context.current++;
+        //Store the incremented value of 'current'
+        Survana.Storage.Set('current', context.current, function () {
+            //load the next form
+            window.location.href = context.workflow[context.current];
+        }, on_storage_error);
+    }
+
+    /** Scrolls the window to the first element with class '.s-error'.
+     */
+    function scroll_to_first_error() {
+        var error_el = document.forms[0].querySelector('.s-error');
+        if (error_el) {
+            var y = error_el.offsetTop - 100;
+            window.scrollBy(0, y);
+        }
     }
 
     /** Callback function for goign to the next form. This function performs response validation and will load the next
@@ -65,29 +101,25 @@ if (!window.Survana) {
 
         var response = Survana.Validation.Validate(document.forms[0]);
 
-        //if validation succeeds, go to the next form
+        //if validation succeeds, save the response and go to the next form
         if (response) {
             //don't do anything in designer mode if validation suceeded
             if (Survana.DesignerMode) {
                 return;
             }
 
-            console.log('response data', response);
+            //Store the response
+            Survana.Queue.Add(response, function (queue) {
 
-            context.current++;
-            //Store the incremented value of 'current'
-            Survana.Storage.Set('current', context.current, function () {
+                console.log('response queue', queue);
+
                 //load the next form
-                window.location.href = context.workflow[context.current];
-            }, onStorageError);
+                goto_next_form();
 
+            }, on_storage_error);
         } else {
-            //scroll to first error
-            var error_el = document.forms[0].querySelector('.s-error');
-            if (error_el) {
-                var y = error_el.offsetTop - 100;
-                window.scrollBy(0, y);
-            }
+            //scroll the window to the first error message
+            scroll_to_first_error();
 
             //enable the button
             if (btn) {
@@ -112,8 +144,8 @@ if (!window.Survana) {
         //remove the entire workflow from storage
         Survana.Storage.Remove(context, function () {
             //but mark this study as completed
-            Survana.Storage.Set('completed', true, null, onStorageError);
-        }, onStorageError);
+            Survana.Storage.Set('completed', true, null, on_storage_error);
+        }, on_storage_error);
     }
 
     //Workflow API
@@ -124,6 +156,6 @@ if (!window.Survana) {
 
     //register an onReady handler, i.e. $(document).ready(). Caveat: does not support older versions of IE
     if (!Survana.DesignerMode) {
-        document.addEventListener("DOMContentLoaded", onDOMContentLoaded);
+        document.addEventListener("DOMContentLoaded", on_dom_content_loaded);
     }
 }(window.Survana));

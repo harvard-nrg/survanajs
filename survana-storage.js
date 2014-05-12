@@ -9,6 +9,7 @@ The API is fully asynchronous (even for localStorage), and all relevant methods 
     Survana.Storage.IsAvailable                     - (boolean) Whether any storage is available
     Survana.Storage.Get(key, success, error)        - Returns an object or value identified by 'key'.
                                                       Returns multiple values if 'key' is an object with keys/defaults
+    Survana.Storage.All(filter, success, error)     - Returns an object with all keys matching 'filter'
     Survana.Storage.Set(key, value, success, error) - Saves an object 'value' identified by 'key'.
                                                       Can save multiple values if 'key' is an object with keys/values.
     Survana.Storage.Save(object, success, error)    - Saves multiple keys and values stored in 'object'.
@@ -39,6 +40,7 @@ if (!window.Survana) {
     var local_storage = {
         'Name': 'LocalStorage',
         'Get': local_storage_get,
+        'All': local_storage_all,
         'Set': local_storage_set,
         'IsAvailable': is_local_storage_available,
         'Remove': local_storage_remove
@@ -151,6 +153,34 @@ if (!window.Survana) {
             } else {
                 //otherwise, treat it as JSON
                 result = JSON.parse(result);
+            }
+        } catch (e) {
+            return error && error(e);
+        }
+
+        success && success(result);
+    }
+
+    /** Searches for all keys in localStorage that are in the current scope and that match 'filter'.
+     * @param filter    {String}    A string to search for in the key
+     * @param success   {Function}  The success callback. Receives an Object with keys and values
+     * @param error     {Function}  The error callback
+     */
+    function local_storage_all(filter, success, error) {
+        var result = {},
+            key;
+
+        try {
+            for (key in localStorage) {
+                if (!localStorage.hasOwnProperty(key)) {
+                    continue;
+                }
+
+                //first, make sure that the key we're looking at is in the current scope
+                //then, make sure the filter matches a part of the string that follows the scope
+                if ((key.indexOf(scope) === 0) && (key.indexOf(filter, scope.length) > 0)) {
+                    result[key] = localStorage[key];
+                }
             }
         } catch (e) {
             return error && error(e);
@@ -312,6 +342,19 @@ if (!window.Survana) {
         return adapter.Get.apply(this, arguments);
     }
 
+    function storage_all(filter, success, error) {
+        if (!filter) {
+            return error && error(new Error("No filter specified."));
+        }
+
+        if (!adapter) {
+            return error && error(new Error("No Storage adapter available"));
+        }
+
+        //call adapter.All
+        return adapter.All.apply(this, arguments);
+    }
+
     /** Calls the adapter's Set method after performing parameter checking
      * @param key       {String|Object} An identifier associated with the value
      * @param value     {*}             The value to save. Optional if key is an Object containing keys/values.
@@ -406,6 +449,7 @@ if (!window.Survana) {
                 'Name': adapter ? adapter.Name : "None",
                 'IsAvailable': Boolean(adapter),
                 'Get': storage_get,
+                'All': storage_all,
                 'Set': storage_set,
                 'Save': storage_save,
                 'Remove': storage_remove,

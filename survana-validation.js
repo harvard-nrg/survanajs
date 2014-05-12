@@ -76,8 +76,8 @@ if (!window.Survana) {
     };
 
     Survana.Validation.Constraints = {
-        equalTo: function (values, target) {
-            console.log('equalTo', arguments);
+        'equal': function (values, target) {
+            console.log('equal', arguments);
             return true;
         },
         optional: function (values, is_optional) {
@@ -267,7 +267,7 @@ if (!window.Survana) {
             }
         }
 
-        function valid(field, field_config) {
+        function valid(field) {
             var question = document.getElementById(field);
 
             if (!question) {
@@ -351,6 +351,9 @@ if (!window.Survana) {
     Survana.Validation.Messages = {
         'invalid': function () {
             return "Please enter a valid value for this field.";
+        },
+        'equal': function () {
+            return "This field must be equal to the previous field.";
         },
         'optional': function () {
             return "This field is required";

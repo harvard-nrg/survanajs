@@ -7,7 +7,7 @@ utility methods for loading scripts and changing Survana themes.
 
 "use strict";
 
-(function(window, document, undefined) {
+(function(window, document) {
 
     /** Generates HTML from a questionnaire's description
      * @param form The JSON description of a questionnaire
