@@ -23,14 +23,20 @@ if (!window.Survana) {
         function on_request_loadend() {
             console.log("on_request_loadend", req.readyState, arguments)
             if (req.readyState === XMLHttpRequest.DONE) {
-                try {
-                    result_json = JSON.parse(req.responseText);
-                } catch (e) {
-                    console.log("Survana.Request: JSON.parse() failed", e, "on", req.responseText);
-                    error && error(e);
-                    return
+                //on OK
+                if (req.status === 200) {
+                    try {
+                        result_json = JSON.parse(req.responseText);
+                    } catch (e) {
+                        console.log("Survana.Request: JSON.parse() failed", e, "on", req.responseText);
+                        error && error(e);
+                        return
+                    }
+                    success && success(result_json);
+                } else {
+                    error && error(new Error(req.statusText));
                 }
-                success && success(result_json);
+
             }
         }
 
