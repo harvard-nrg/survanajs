@@ -1,7 +1,8 @@
 /* survana-queue.js
 A locally-stored response queue to preserve responses across page loads.
 
-Dependencies: Survana.Storage
+Dependencies:   survana-storage.js
+                survana-request.js
 */
 
 "use strict";
@@ -45,8 +46,30 @@ if (!window.Survana) {
         }, error);
     }
 
+    /** Returns the queue
+     * @returns {Object} The Queue
+     */
     function get_queue() {
         return queue;
+    }
+
+    /** Sends the entire queue as a JSONP request to the specified URL
+     * @param url       {String}    The endpoint URL that accepts a JSON object as a GET parameter
+     * @param success   {Function}  The success callback
+     * @param error     {Function}  The error callback
+     */
+    function send(url, success, error) {
+        Survana.PostJSON(url,
+            queue,
+            function () {
+                console.log('PostJSON success', arguments);
+                success && success();
+            },
+            function () {
+                console.log('PostJSON failure', arguments);
+                error && error(new Error("PostJSON request failed"));
+            }
+        );
     }
 
     if (!Survana.DesignerMode) {
@@ -60,7 +83,8 @@ if (!window.Survana) {
         Survana.Queue = {
             'Add': add,
             'Remove': Survana.Storage.Remove,
-            'Get': get_queue
+            'Get': get_queue,
+            'Send': send
         };
     }
 }(window.Survana));

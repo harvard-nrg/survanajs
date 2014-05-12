@@ -35,7 +35,8 @@ if (!window.Survana) {
         workflow: {},
         current: 0,
         start: 0,
-        completed: false
+        completed: false,
+        'store-url': null
     };
 
     /** Handles errors reported by Survana.Storage
@@ -88,6 +89,15 @@ if (!window.Survana) {
         }
     }
 
+    /** Handles errors from Survana.Queue
+     * @param e {Error} The Error object
+     */
+    function on_queue_send_error(e) {
+        console.error("Failed to send queue:", e);
+        //proceed to the next form anyway, since the queue is stored in persistent storage
+        goto_next_form();
+    }
+
     /** Callback function for goign to the next form. This function performs response validation and will load the next
      * form or scroll the page to the first error.
      * @param btn {HTMLButtonElement} The source button
@@ -112,10 +122,7 @@ if (!window.Survana) {
             Survana.Queue.Add(response, function (queue) {
 
                 console.log('response queue', queue);
-
-                //load the next form
-                goto_next_form();
-
+                Survana.Queue.Send(context['store-url'], goto_next_form, on_queue_send_error);
             }, on_storage_error);
         } else {
             //scroll the window to the first error message
