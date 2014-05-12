@@ -13,7 +13,8 @@ if (!window.Survana) {
     function post_json(url, data, success, error) {
 
         var req = new XMLHttpRequest(),
-            post_data = JSON.stringify(data);
+            post_data = JSON.stringify(data),
+            result_json;
 
         function on_request_load() {
             console.log("on_request_load", req.readyState, arguments);
@@ -21,6 +22,16 @@ if (!window.Survana) {
 
         function on_request_loadend() {
             console.log("on_request_loadend", req.readyState, arguments)
+            if (req.readyState === XMLHttpRequest.DONE) {
+                try {
+                    result_json = JSON.parse(req.responseText);
+                } catch (e) {
+                    console.log("Survana.Request: JSON.parse() failed", e, "on", req.responseText);
+                    error && error(e);
+                    return
+                }
+                success && success(result_json);
+            }
         }
 
         function on_request_change() {
