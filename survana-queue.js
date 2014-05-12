@@ -49,14 +49,18 @@ if (!window.Survana) {
         return queue;
     }
 
-    //update the queue
-    Survana.Storage.All('response', function (result) {
-        queue = result;
-    }, on_storage_error);
+    if (!Survana.DesignerMode) {
 
-    Survana.Queue = {
-        'Add': add,
-        'Remove': Survana.Storage.Remove,
-        'Get': get_queue
-    };
+        //update the queue
+        Survana.Storage.All('response', function (result) {
+            queue = result;
+        }, on_storage_error);
+
+        //Queue API
+        Survana.Queue = {
+            'Add': add,
+            'Remove': Survana.Storage.Remove,
+            'Get': get_queue
+        };
+    }
 }(window.Survana));

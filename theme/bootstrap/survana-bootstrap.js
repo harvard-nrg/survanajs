@@ -526,6 +526,8 @@ var BootstrapEngine = function (doc) {
         _html(label, field);
         _value(elem, field);
 
+        console.log("button field:", field);
+
         label.appendChild(elem);
         return label;
     }
