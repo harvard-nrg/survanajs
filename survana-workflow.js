@@ -72,6 +72,9 @@ if (!window.Survana) {
      */
     function goto_next_form() {
         context.current++;
+        if (context.current >= context.workflow.length) {
+            return finish_survey(); //todo: verify that when going Back and clicking Next this doesn't break the flow
+        }
         //Store the incremented value of 'current'
         Survana.Storage.Set('current', context.current, function () {
             //load the next form
