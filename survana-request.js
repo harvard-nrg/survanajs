@@ -51,7 +51,7 @@ if (!window.Survana) {
         req.onabort = error;
 
         req.open("POST", url, true);
-        req.send();
+        req.send(result_json);
     }
 
     //API

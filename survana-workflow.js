@@ -98,7 +98,7 @@ if (!window.Survana) {
         goto_next_form();
     }
 
-    /** Callback function for goign to the next form. This function performs response validation and will load the next
+    /** Callback function for going to the next form. This function performs response validation and will load the next
      * form or scroll the page to the first error.
      * @param btn {HTMLButtonElement} The source button
      */
