@@ -107,7 +107,8 @@ if (!window.Survana) {
      * @param error     {Function}  The error callback.
      */
     function local_storage_get_multi(keys, success, error) {
-        var result;
+        var result,
+            scope_length = scope.length;
 
         try {
             for (var id in keys) {
@@ -120,6 +121,11 @@ if (!window.Survana) {
                 //skip values that aren't available
                 if (result === undefined) {
                     continue;
+                }
+
+                //remove the scope from key ids
+                if (scope_length) {
+                    id = id.substr(scope_length);
                 }
 
                 keys[id] = JSON.parse(result);
@@ -238,9 +244,8 @@ if (!window.Survana) {
      * @param obj       {Object}    An object which holds the keys to remove
      * @param success   {Function}  The success callback
      * @param error     {Function}  The error callback
-     * @param no_scope  {Function}  Ignore the current Storage scope
      */
-    function local_storage_remove_multi(obj, success, error, no_scope) {
+    function local_storage_remove_multi(obj, success, error) {
 
         try {
             for (var key in obj) {
@@ -248,11 +253,7 @@ if (!window.Survana) {
                     continue;
                 }
 
-                //use the current scope, unless "no_scope" was specified
-                //this lets the user pass objects where the scope is already part of the keys
-                if (!no_scope) {
-                    key = scope + key;
-                }
+                key = scope + key;
 
                 delete localStorage[key];
             }
@@ -267,20 +268,15 @@ if (!window.Survana) {
      * @param key       {String|Object} The id of the object to remove, or an object with keys to remove.
      * @param success   {Function}      The success callback
      * @param error     {Function}      The error callback
-     * @param no_scope  {Function}      Ignore the current Storage scope
      */
-    function local_storage_remove(key, success, error, no_scope) {
+    function local_storage_remove(key, success, error) {
 
         if (typeof key === "object") {
             return local_storage_remove_multi.apply(this, arguments);
         }
 
         try {
-            //use the current scope, unless "no_scope" was specified
-            //this lets the user pass objects where the scope is already part of the keys
-            if (!no_scope) {
-                key = scope + key;
-            }
+            key = scope + key;
 
             delete localStorage[key];
         } catch (e) {
@@ -420,9 +416,8 @@ if (!window.Survana) {
      * @param key       {String|Object} The id of the value to remove
      * @param success   {Function}      The success callback
      * @param error     {Function}      The error callback
-     * @param no_scope  {Boolean}       Ignore the current Storage scope when looking at the keys
      */
-    function storage_remove(key, success, error, no_scope) {
+    function storage_remove(key, success, error) {
         //check that a valid key has been specified
         if (!key) {
             return error && error(new Error("Storage.Get: a key is required to retrieve a storage value."));
