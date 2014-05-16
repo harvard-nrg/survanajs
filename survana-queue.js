@@ -57,17 +57,33 @@ if (!window.Survana) {
         return queue;
     }
 
-    /** Sends the entire queue as a JSONP request to the specified URL
+    /** Sends the entire queue as the JSON body of a POST request to the specified URL
      * @param url       {String}    The endpoint URL that accepts a JSON object as a GET parameter
-     * @param success   {Function}  The success callback
+     * @param success   {Function}  The success callback, passes Object containing success/failure keys
      * @param error     {Function}  The error callback
      */
     function send(url, success, error) {
         Survana.Request.PostJSON(url,
             queue,
-            function () {
-                console.log('PostJSON success', arguments);
-                success && success();
+            function (response) {
+                if (!response.success || !response.message) {
+                    return error && error(response.message || new Error("Failed to store response queue."));
+                }
+
+                //remove all unsuccessful keys from response.message
+                for (var response_id in response.message) {
+                    if (!response.message.hasOwnProperty(response_id)) {
+                        continue;
+                    }
+
+                    if (!response.message[response_id]) {
+                        console.error("Survana.Queue: Failed to store", response_id);
+                        delete response.message[response_id];
+                    }
+                }
+
+                //remove all successful keys
+                Survana.Storage.Remove(response.message, success, error);
             },
             function () {
                 console.log('PostJSON failure', arguments);
