@@ -238,8 +238,9 @@ if (!window.Survana) {
      * @param obj       {Object}    An object which holds the keys to remove
      * @param success   {Function}  The success callback
      * @param error     {Function}  The error callback
+     * @param no_scope  {Function}  Ignore the current Storage scope
      */
-    function local_storage_remove_multi(obj, success, error) {
+    function local_storage_remove_multi(obj, success, error, no_scope) {
 
         try {
             for (var key in obj) {
@@ -247,7 +248,13 @@ if (!window.Survana) {
                     continue;
                 }
 
-                delete localStorage[scope + key];
+                //use the current scope, unless "no_scope" was specified
+                //this lets the user pass objects where the scope is already part of the keys
+                if (!no_scope) {
+                    key = scope + key;
+                }
+
+                delete localStorage[key];
             }
         } catch (e) {
             return error && error(e);
@@ -260,15 +267,22 @@ if (!window.Survana) {
      * @param key       {String|Object} The id of the object to remove, or an object with keys to remove.
      * @param success   {Function}      The success callback
      * @param error     {Function}      The error callback
+     * @param no_scope  {Function}      Ignore the current Storage scope
      */
-    function local_storage_remove(key, success, error) {
+    function local_storage_remove(key, success, error, no_scope) {
 
         if (typeof key === "object") {
             return local_storage_remove_multi(key, success, error);
         }
 
         try {
-            delete localStorage[scope + key];
+            //use the current scope, unless "no_scope" was specified
+            //this lets the user pass objects where the scope is already part of the keys
+            if (!no_scope) {
+                key = scope + key;
+            }
+
+            delete localStorage[key];
         } catch (e) {
             return error && error(e);
         }
@@ -406,8 +420,9 @@ if (!window.Survana) {
      * @param key       {String|Object} The id of the value to remove
      * @param success   {Function}      The success callback
      * @param error     {Function}      The error callback
+     * @param no_scope  {Boolean}       Ignore the current Storage scope when looking at the keys
      */
-    function storage_remove(key, success, error) {
+    function storage_remove(key, success, error, no_scope) {
         //check that a valid key has been specified
         if (!key) {
             return error && error(new Error("Storage.Get: a key is required to retrieve a storage value."));

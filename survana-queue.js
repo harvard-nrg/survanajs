@@ -82,8 +82,8 @@ if (!window.Survana) {
                     }
                 }
 
-                //remove all successful keys
-                Survana.Storage.Remove(response.message, success, error);
+                //remove all successful keys, don't use current scope, as it's already part of the keys
+                Survana.Storage.Remove(response.message, success, error, false);
             },
             function () {
                 console.log('PostJSON failure', arguments);
