@@ -12,13 +12,9 @@ if (!window.Survana) {
 
     function post_json(url, data, success, error) {
 
-        console.log('stringifying', data);
-
         var req = new XMLHttpRequest(),
             post_data = JSON.stringify(data),
             result_json;
-
-        console.log('post data', post_data);
 
         function on_request_load() {
             console.log("on_request_load", req.readyState, arguments);
@@ -55,7 +51,7 @@ if (!window.Survana) {
         req.onabort = error;
 
         req.open("POST", url, true);
-        req.send(data);
+        req.send(post_data);
     }
 
     //API
