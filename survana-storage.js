@@ -179,7 +179,7 @@ if (!window.Survana) {
                 //first, make sure that the key we're looking at is in the current scope
                 //then, make sure the filter matches a part of the string that follows the scope
                 if ((key.indexOf(scope) === 0) && (key.indexOf(filter, scope.length) > 0)) {
-                    result[key] = localStorage[key];
+                    result[key] = JSON.parse(localStorage[key]);
                 }
             }
         } catch (e) {
