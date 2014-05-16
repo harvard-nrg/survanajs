@@ -21,7 +21,7 @@ if (!window.Survana) {
         }
 
         function on_request_loadend() {
-            console.log("on_request_loadend", req.readyState, arguments)
+            console.log("on_request_loadend", req.readyState, arguments);
             if (req.readyState === XMLHttpRequest.DONE) {
                 //on OK
                 if (req.status === 200) {
@@ -51,7 +51,7 @@ if (!window.Survana) {
         req.onabort = error;
 
         req.open("POST", url, true);
-        req.send(result_json);
+        req.send(post_data);
     }
 
     //API
