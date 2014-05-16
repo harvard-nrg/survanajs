@@ -107,8 +107,7 @@ if (!window.Survana) {
      * @param error     {Function}  The error callback.
      */
     function local_storage_get_multi(keys, success, error) {
-        var result,
-            scope_length = scope.length;
+        var result;
 
         try {
             for (var id in keys) {
@@ -121,11 +120,6 @@ if (!window.Survana) {
                 //skip values that aren't available
                 if (result === undefined) {
                     continue;
-                }
-
-                //remove the scope from key ids
-                if (scope_length) {
-                    id = id.substr(scope_length);
                 }
 
                 keys[id] = JSON.parse(result);
@@ -174,7 +168,9 @@ if (!window.Survana) {
      */
     function local_storage_all(filter, success, error) {
         var result = {},
-            key;
+            key,
+            scope_length = scope.length,
+            id;
 
         try {
             for (key in localStorage) {
@@ -183,10 +179,20 @@ if (!window.Survana) {
                 }
 
                 //first, make sure that the key we're looking at is in the current scope
-                //then, make sure the filter matches a part of the string that follows the scope
-                if ((key.indexOf(scope) === 0) && (key.indexOf(filter, scope.length) > 0)) {
-                    result[key] = JSON.parse(localStorage[key]);
+                //then, make sure the filter matches a part of the string that follows the scope (or 0 if no scope)
+                if ((scope_length && (key.indexOf(scope) !== 0)) || (key.indexOf(filter, scope_length) < 0)) {
+                    continue;
                 }
+
+                //remove the scope from the key, if necessary
+                if (scope_length) {
+                    id = key.substr(scope.length);
+                } else {
+                    id = key;
+                }
+
+                //finally, assign the localStorage value to the result id
+                result[id] = JSON.parse(localStorage[key]);
             }
         } catch (e) {
             return error && error(e);
