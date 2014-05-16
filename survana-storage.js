@@ -272,7 +272,7 @@ if (!window.Survana) {
     function local_storage_remove(key, success, error, no_scope) {
 
         if (typeof key === "object") {
-            return local_storage_remove_multi(key, success, error);
+            return local_storage_remove_multi.apply(this, arguments);
         }
 
         try {
