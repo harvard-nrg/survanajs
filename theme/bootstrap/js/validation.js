@@ -25,7 +25,7 @@ if (!window.Survana) {
         }
 
         //hide the error message
-        Survana.Theme.HideValidationMessage(document.getElementById(q_id));
+        Survana.Theme.Current.HideValidationMessage(document.getElementById(q_id));
 
         Survana.Validation.Skip(q_id);
 

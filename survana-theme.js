@@ -23,7 +23,7 @@ if (!window.Survana) {
             return null
         }
 
-        var Q = new Survana.Engine[Survana.Theme](document);
+        var Q = new Survana.Engine[Survana.Theme.Id](document);
 
         // parses a list of fields
         var questionnaire = document.createDocumentFragment(),
@@ -61,6 +61,7 @@ if (!window.Survana) {
                     Survana.Theme.Id = theme_id;
                     Survana.Theme.Name = Survana.Engine[theme_id].Name;
                     Survana.Theme.Version = Survana.Engine[theme_id].Version;
+                    Survana.Theme.Current = Survana.Engine[theme_id];
                     success && success(theme_id);
                 },
                 error);
@@ -69,6 +70,7 @@ if (!window.Survana) {
             Survana.Theme.Id = theme_id;
             Survana.Theme.Name = Survana.Engine[theme_id].Name;
             Survana.Theme.Version = Survana.Engine[theme_id].Version;
+            Survana.Theme.Current = Survana.Engine[theme_id];
             success && success(theme_id);
         }
     }

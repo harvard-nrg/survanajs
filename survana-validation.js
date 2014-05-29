@@ -264,8 +264,8 @@ if (!window.Survana) {
             question.classList.add(Survana.Validation.INVALID);
 
             //call the theme's error message handler
-            if (Survana.Theme && Survana.Theme.ShowValidationMessage) {
-                Survana.Theme.ShowValidationMessage(question, message, src_input);
+            if (Survana.Theme && Survana.Theme.Current && Survana.Theme.Current.ShowValidationMessage) {
+                Survana.Theme.Current.ShowValidationMessage(question, message, src_input);
             }
         }
 
@@ -279,8 +279,8 @@ if (!window.Survana) {
 
             question.classList.remove(Survana.Validation.INVALID);
 
-            if (Survana.Theme && Survana.Theme.HideValidationMessage) {
-                Survana.Theme.HideValidationMessage(question);
+            if (Survana.Theme && Survana.Theme.Current && Survana.Theme.Current.HideValidationMessage) {
+                Survana.Theme.Current.HideValidationMessage(question);
             }
         }
 
