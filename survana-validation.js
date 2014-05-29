@@ -342,6 +342,14 @@ if (!window.Survana) {
         return false;
     };
 
+    /** onblur event handler
+     * @param e {Event} The Blur event object
+     * @constructor
+     */
+    Survana.Validation.OnBlur = function (e) {
+        console.log('onblur', e);
+    };
+
 
     /**
      * Default validation messages. The keys of this object match the names of validation constraints, except for

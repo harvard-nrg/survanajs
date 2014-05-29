@@ -182,6 +182,16 @@ var BootstrapEngine = function (doc) {
         }
     }
 
+    function _validation(elem, field) {
+        if (!field.validation) {
+            console.log('No validation for', field);
+            return;
+        }
+
+        //onblur handler
+        elem.setAttribute('onblur', 'return Survana.Validation.OnBlur(this);');
+    }
+
     function group(field) {
 
         var container,
@@ -547,6 +557,7 @@ var BootstrapEngine = function (doc) {
 
         _value(elem, field.value);
         _placeholder(elem, field);
+        _validation(elem, field);
 
         return elem;
     }
