@@ -207,7 +207,8 @@ if (!window.Survana) {
         function get_value_by_type(element, field_type) {
             //prefer to use field_type as the type of the field represented by 'element'
             switch (field_type) {
-                default: break; //todo: implement custom components
+                default:
+                    break; //todo: implement custom components
             }
 
             switch (element.tagName.toLowerCase()) {
@@ -219,7 +220,8 @@ if (!window.Survana) {
                                 return element.value;
                             }
                             return undefined;
-                        default: return element.value;
+                        default:
+                            return element.value;
                     }
                     break;
                 case 'button':
@@ -343,11 +345,56 @@ if (!window.Survana) {
     };
 
     /** onblur event handler
-     * @param e {Event} The Blur event object
+     * @param e {HTMLElement} The Blur event object
      * @constructor
      */
-    Survana.Validation.OnBlur = function (e) {
-        console.log('onblur', e);
+    Survana.Validation.OnBlur = function (el, form_config) {
+        console.log('onblur', el);
+
+        var form_id = el.getAttribute("data-form"),
+            field_name = el.getAttribute("name"),
+            field_config,
+            value,
+            constraint,
+            is_valid;
+
+        Survana.Assert(field_name, el, "Element must have a name attribute");
+        Survana.Assert(form_id, el, "Element must have a data-form attribute");
+
+        if (!form_config && validation_config[form_id]) {
+            form_config = validation_config[form_id].config;
+        }
+
+        if (!form_config) {
+            Survana.Warn("No validation configuration for form", form_id);
+            return;
+        }
+
+        field_config = form_config[field_name];
+
+        if (!field_config) {
+            Survana.Warn("No validation configuration for field", field_name);
+        }
+
+        value = get_value_by_type(el, field_config.type);
+        is_valid = true;
+
+        //check all user-specified constraints
+        for (constraint in field_config) {
+            if (!field_config.hasOwnProperty(constraint) || !Survana.Validation.Constraints[constraint]) {
+                continue;
+            }
+
+            //verify constraint
+            if (!Survana.Validation.Constraints[constraint](value, field_config[constraint])) {
+                console.log('Constraint', constraint, '=', field_config[constraint], 'failed validation; values=', value);
+                invalid(field_name, field_config, constraint);
+                is_valid = false;
+                break;
+            }
+        }
+
+        return is_valid;
     };
 
 

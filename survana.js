@@ -1,13 +1,13 @@
 /* survana.js
 
-Defines an API for all survana-enabled client-side modules. Auto-detects the path to survana.js, stores a list of all
-available questionnaire engines, and defines methods for generating HTML from JSON definition of forms, as well as
-utility methods for loading scripts and changing Survana themes.
-*/
+ Defines an API for all survana-enabled client-side modules. Auto-detects the path to survana.js, stores a list of all
+ available questionnaire engines, and defines methods for generating HTML from JSON definition of forms, as well as
+ utility methods for loading scripts and changing Survana themes.
+ */
 
 "use strict";
 
-(function(window, document) {
+(function (window, document) {
 
     /** Generates HTML from a questionnaire's description
      * @param form The JSON description of a questionnaire
@@ -111,23 +111,45 @@ utility methods for loading scripts and changing Survana themes.
         return null;
     }
 
+    function assert(cond, obj) {
+        console.assert.apply(this, arguments);
+    }
+
+    function log(obj) {
+        console.log.apply(this, arguments);
+    }
+
+    function warn(obj) {
+        console.warn.apply(this, arguments);
+    }
+
+    function error(obj) {
+        console.error.apply(this, arguments);
+    }
+
     //API
     window.Survana = {
         //paths
-        ThemePath:  "theme/",
+        ThemePath: "theme/",
         ScriptPath: detect_script_path('survana.js'),
 
         //properties
-        Engine :    {},
-        Theme:      null,
-        Version:    "1.0.0",
+        Engine: {},
+        Theme: null,
+        Version: "1.0.0",
 
         //methods
-        Questionnaire:  questionnaire,
-        SetTheme:       set_theme,
-        LoadScript:     load_script,
+        Questionnaire: questionnaire,
+        SetTheme: set_theme,
+        LoadScript: load_script,
 
         //Switches
-        DesignerMode: true
+        DesignerMode: true,
+
+        //Dev methods
+        Assert: assert,
+        Error: error,
+        Log: log,
+        Warn: warn
     };
 })(window, document);

@@ -3,8 +3,8 @@ if (typeof Survana === undefined) {
 }
 
 /* isArray() polyfill */
-if(!Array.isArray) {
-    Array.isArray = function(arg) {
+if (!Array.isArray) {
+    Array.isArray = function (arg) {
         return Object.prototype.toString.call(arg) === '[object Array]';
     };
 }
@@ -124,9 +124,15 @@ var BootstrapEngine = function (doc) {
         var c = elem.getAttribute('class') || "";
 
         switch (field.align) {
-            case 'left': elem.setAttribute('class', c + ' pull-left'); break;
-            case 'center': elem.setAttribute('class', c + ' center-block'); break;
-            case 'right': elem.setAttribute('class', c + ' pull-right'); break;
+            case 'left':
+                elem.setAttribute('class', c + ' pull-left');
+                break;
+            case 'center':
+                elem.setAttribute('class', c + ' center-block');
+                break;
+            case 'right':
+                elem.setAttribute('class', c + ' pull-right');
+                break;
         }
     }
 
@@ -188,6 +194,15 @@ var BootstrapEngine = function (doc) {
             return;
         }
 
+        //store important validation IDs as element attributes
+        if (field.form_id) {
+            elem.setAttribute('data-form', field.form_id);
+        }
+
+        if (field.question_id) {
+            elem.setAttribute('data-question', field.question_id);
+        }
+
         //onblur handler
         elem.setAttribute('onblur', 'return Survana.Validation.OnBlur(this);');
     }
@@ -203,12 +218,14 @@ var BootstrapEngine = function (doc) {
 
         //create a specialized container
         switch (field.group) {
-            case "option":  container = doc.createElement('optgroup');
-                            if (field.html) {
-                                container.setAttribute('label', field.html);
-                            }
-                            break;
-            default: container = doc.createElement('div');
+            case "option":
+                container = doc.createElement('optgroup');
+                if (field.html) {
+                    container.setAttribute('label', field.html);
+                }
+                break;
+            default:
+                container = doc.createElement('div');
         }
 
 
@@ -225,6 +242,10 @@ var BootstrapEngine = function (doc) {
 
 
         for (i in field.fields) {
+            if (!field.fields.hasOwnProperty(i)) {
+                continue;
+            }
+
             f = field.fields[i];
 
             //a 'radio'-group has 'radio' fields, a 'checkbox'-group has 'checkbox'-fields, etc
@@ -258,9 +279,9 @@ var BootstrapEngine = function (doc) {
         }
 
 
-
         switch (field.group) {
-            case 'button': c += ' btn-group btn-group-justified';
+            case 'button':
+                c += ' btn-group btn-group-justified';
                 container.setAttribute('data-toggle', 'buttons');
                 break;
         }
@@ -508,9 +529,9 @@ var BootstrapEngine = function (doc) {
     }
 
     /* <label class="btn btn-default">
-            <input type="radio" id="" name="">
-       </label>
-    */
+     <input type="radio" id="" name="">
+     </label>
+     */
     function group_button(field) {
         if (field === undefined || !field) {
             return null;
@@ -662,7 +683,7 @@ var BootstrapEngine = function (doc) {
         elem.setAttribute('class', 'btn btn-default');
 
         child.setAttribute('type', 'radio');
-        child.setAttribute('id', id)
+        child.setAttribute('id', id);
         child.setAttribute('name', name);
 
         _value(child, field.value);
@@ -791,9 +812,9 @@ var BootstrapEngine = function (doc) {
 
     /**
      * Calls a handler based on the 'type' property of the 'field' object.
-     * @param field A user-specified object containing a .type property
-     * @param t An optional default type, if field.type doesn't exist
-     * @param col An optional collection object with pointers to the type handlers. default: 'types'
+     * @param field {Object}    A user-specified object containing a .type property
+     * @param [t]               An optional default type, if field.type doesn't exist
+     * @param [col]             An optional collection object with pointers to the type handlers. default: 'types'
      * @returns HTMLElement on Success, null on Failure
      */
     function by_type(field, t, col) {
@@ -904,9 +925,11 @@ var BootstrapEngine = function (doc) {
         elem = by_type(field);
 
         switch (field.type) {
-            case 'button':  container.setAttribute('class', 'input-group-btn');
-                            break;
-            default:        container.setAttribute('class', 'input-group-addon');
+            case 'button':
+                container.setAttribute('class', 'input-group-btn');
+                break;
+            default:
+                container.setAttribute('class', 'input-group-addon');
         }
 
         if (elem) {
@@ -916,10 +939,11 @@ var BootstrapEngine = function (doc) {
         return container || elem;
     }
 
-    /* @note generates and returns a container element
-        @note To support array of addons (i.e. multiple prefixes or multiple suffixes), this method must construct
-        multiple <span class="input-group"> as siblings, one for each affix
-    * */
+    /**
+     * @note generates and returns a container element
+     * @note To support array of addons (i.e. multiple prefixes or multiple suffixes), this method must construct
+     *       multiple <span class="input-group"> as siblings, one for each affix
+     */
     function affix(elem, obj, container) {
 
         var el;
@@ -939,7 +963,7 @@ var BootstrapEngine = function (doc) {
         if (el) {
             container.appendChild(el);
         } else {
-            console.warn(obj.id,"prefix or suffix declared, but no element was generated for",obj);
+            console.warn(obj.id, "prefix or suffix declared, but no element was generated for", obj);
         }
 
         return container;
@@ -954,7 +978,7 @@ var BootstrapEngine = function (doc) {
         return container;
     }
 
-    function _suffix(elem, field,container) {
+    function _suffix(elem, field, container) {
         container = affix(elem, field.suffix, container);
         if (container && !container.contains(elem)) {
             container.insertBefore(elem, container.lastChild);
@@ -963,7 +987,7 @@ var BootstrapEngine = function (doc) {
     }
 
     //returns the control for a question. this can either be an element, or a group of elements (input with suffix)
-    function control(field) {
+    function control(field, form_id) {
         var container,
             elem;
 
@@ -976,12 +1000,16 @@ var BootstrapEngine = function (doc) {
     }
 
     // <question id="%QID%"><div class="form-group"> ... </div></question>
-    function question(field) {
+    function question(field, form) {
         var q, form_group, row, label, cwrap, elem, sizes;
 
         //auto-assign a field id if necessary
         if (!field.id) {
-            field.id = "question" + (++question_count);
+            field.id = field.question_id = "question" + (++question_count);
+        }
+
+        if (form) {
+            field.form_id = form.getAttribute('id');
         }
 
         sizes = getSizes(field);
@@ -1003,7 +1031,7 @@ var BootstrapEngine = function (doc) {
         _size(cwrap, field, sizes.control);
 
         //control element
-        elem = control(field);
+        elem = control(field, form_id);
         cwrap.appendChild(elem);
 
         //label
@@ -1031,7 +1059,7 @@ var BootstrapEngine = function (doc) {
             elem.setAttribute('id', field.id);
         } else {
             //autogenerate an id
-            elem.setAttribute('id', 'form-'+String((new Date()).valueOf()));
+            elem.setAttribute('id', 'form-' + String((new Date()).valueOf()));
         }
 
         return elem;
