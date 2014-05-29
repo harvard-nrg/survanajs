@@ -30,7 +30,7 @@
 
         //loop over all fields
         for (i = 0; i < nfields; ++i) {
-            elem = Q.question(form.fields[i]);
+            elem = Q.question(form.fields[i], form_el);
             if (elem) {
                 form_el.appendChild(elem);
             }

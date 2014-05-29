@@ -987,7 +987,7 @@ var BootstrapEngine = function (doc) {
     }
 
     //returns the control for a question. this can either be an element, or a group of elements (input with suffix)
-    function control(field, form_id) {
+    function control(field) {
         var container,
             elem;
 
@@ -1031,7 +1031,7 @@ var BootstrapEngine = function (doc) {
         _size(cwrap, field, sizes.control);
 
         //control element
-        elem = control(field, form_id);
+        elem = control(field);
         cwrap.appendChild(elem);
 
         //label
