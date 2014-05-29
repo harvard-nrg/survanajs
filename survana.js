@@ -1,45 +1,14 @@
 /* survana.js
 
- Defines an API for all survana-enabled client-side modules. Auto-detects the path to survana.js, stores a list of all
- available questionnaire engines, and defines methods for generating HTML from JSON definition of forms, as well as
- utility methods for loading scripts and changing Survana themes.
+ Defines an API for all Survana-enabled client-side modules.
+    - Auto-detects the path to survana.js
+    - Provides method for loading scripts dynamically
+    - Defines debug methods (Assert, Error, Log, Warn)
  */
 
 "use strict";
 
 (function (window, document) {
-
-    /** Generates HTML from a questionnaire's description
-     * @param form The JSON description of a questionnaire
-     * @returns {DocumentFragment} An HTML rendering in a DocumentFragment object
-     */
-    function questionnaire(form) {
-
-        if (!form || !form['fields'] || !Survana.Theme) {
-            return null
-        }
-
-        var Q = new window.Survana.Engine[window.Survana.Theme](document);
-
-        // parses a list of fields
-        var questionnaire = document.createDocumentFragment(),
-            form_el = Q.form(form),
-            i,
-            elem,
-            nfields = form.fields.length;
-
-        //loop over all fields
-        for (i = 0; i < nfields; ++i) {
-            elem = Q.question(form.fields[i], form_el);
-            if (elem) {
-                form_el.appendChild(elem);
-            }
-        }
-
-        questionnaire.appendChild(form_el);
-
-        return questionnaire;
-    }
 
     /** Loads a js file using <script> tags appended to <body>
      * @param path      {String}    Path to the Javascript file
@@ -56,30 +25,6 @@
 
         //append <script> to this document's <body>
         document.body.appendChild(script);
-    }
-
-    /** Loads and updates the current theme. Questionnaires should be re-rendered
-     * @param theme_id  {String}    ID of the theme to load
-     * @param success   {Function}  The success callback, called when the theme file was loaded
-     * @param error     {Function}  The error callback in case of a network failure
-     */
-    function set_theme(theme_id, success, error) {
-
-        //load the theme dynamically
-        if (!window.Survana.Engine[theme_id]) {
-            console.log('Loading theme', theme_id);
-
-            load_script(window.Survana.ScriptPath + window.Survana.ThemePath + theme_id + '/survana-' + theme_id + '.js',
-                function () {
-                    Survana.Theme = theme_id;
-                    success && success(theme_id);
-                },
-                error);
-        } else {
-            //if the theme is already available, set it as the current theme and call the success function
-            Survana.Theme = theme_id;
-            success && success(theme_id);
-        }
     }
 
     /** Searches for the path to a script specified by 'scriptName'
@@ -129,27 +74,20 @@
 
     //API
     window.Survana = {
-        //paths
-        ThemePath: "theme/",
-        ScriptPath: detect_script_path('survana.js'),
 
-        //properties
-        Engine: {},
-        Theme: null,
+        //Properties
+        ScriptPath: detect_script_path('survana.js'),
         Version: "1.0.0",
 
-        //methods
-        Questionnaire: questionnaire,
-        SetTheme: set_theme,
+        //Methods
         LoadScript: load_script,
-
-        //Switches
-        DesignerMode: true,
 
         //Dev methods
         Assert: assert,
         Error: error,
         Log: log,
         Warn: warn
+
+        //Switches
     };
 })(window, document);

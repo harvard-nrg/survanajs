@@ -9,7 +9,8 @@ if (!Array.isArray) {
     };
 }
 
-var id = "bootstrap",
+var engine_id = "bootstrap",
+    engine_name = "Bootstrap 3"
     engine_version = "1.0.0",
     ncolumns = 12,
 //default controls take up all columns (an entire row)
@@ -1066,14 +1067,21 @@ var BootstrapEngine = function (doc) {
     }
 
     return {
+
+        //Properties
+        Id: engine_id,
+        Name: engine_name,
+        Version: engine_version,
+
+        //Methods
         form: form,
         question: question
     };
 };
 
-Survana.Engine[id] = BootstrapEngine;
+Survana.Engine[engine_id] = BootstrapEngine;
 
 //set this as the default theme, if no default exists
-if (!Survana.Theme) {
-    Survana.Theme = id;
+if (!Survana.Theme.Id) {
+    Survana.Theme.SetTheme(engine_id, null, null);
 }
