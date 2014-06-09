@@ -1079,7 +1079,7 @@ var BootstrapEngine = function (doc) {
     };
 };
 
-Survana.Engine[engine_id] = BootstrapEngine;
+Survana.Theme.Engine[engine_id] = BootstrapEngine;
 
 //set this as the default theme, if no default exists
 if (!Survana.Theme.Id) {

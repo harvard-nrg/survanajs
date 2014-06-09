@@ -23,7 +23,7 @@ if (!window.Survana) {
             return null
         }
 
-        var Q = new Survana.Engine[Survana.Theme.Id](document);
+        var Q = new Survana.Theme.Engine[Survana.Theme.Id](document);
 
         // parses a list of fields
         var questionnaire = document.createDocumentFragment(),
@@ -59,18 +59,18 @@ if (!window.Survana) {
             load_script(Survana.Theme.Path + theme_id + '/survana-' + theme_id + '.js',
                 function () {
                     Survana.Theme.Id = theme_id;
-                    Survana.Theme.Name = Survana.Engine[theme_id].Name;
-                    Survana.Theme.Version = Survana.Engine[theme_id].Version;
-                    Survana.Theme.Current = Survana.Engine[theme_id];
+                    Survana.Theme.Name = Survana.Theme.Engine[theme_id].Name;
+                    Survana.Theme.Version = Survana.Theme.Engine[theme_id].Version;
+                    Survana.Theme.Current = Survana.Theme.Engine[theme_id];
                     success && success(theme_id);
                 },
                 error);
         } else {
             //if the theme is already available, set it as the current theme and call the success function
             Survana.Theme.Id = theme_id;
-            Survana.Theme.Name = Survana.Engine[theme_id].Name;
-            Survana.Theme.Version = Survana.Engine[theme_id].Version;
-            Survana.Theme.Current = Survana.Engine[theme_id];
+            Survana.Theme.Name = Survana.Theme.Engine[theme_id].Name;
+            Survana.Theme.Version = Survana.Theme.Engine[theme_id].Version;
+            Survana.Theme.Current = Survana.Theme.Engine[theme_id];
             success && success(theme_id);
         }
     }
