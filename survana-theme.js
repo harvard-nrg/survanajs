@@ -53,7 +53,7 @@ if (!window.Survana) {
     function set_theme(theme_id, success, error) {
 
         //load the theme dynamically
-        if (!Survana.Engine[theme_id]) {
+        if (!Survana.Theme.Engine[theme_id]) {
             console.log('Loading theme', theme_id);
 
             load_script(Survana.Theme.Path + theme_id + '/survana-' + theme_id + '.js',
