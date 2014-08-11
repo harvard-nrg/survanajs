@@ -149,11 +149,12 @@ if (!window.Survana) {
      * Validate <form> elements, based on a validation configuration pre-built when publishing the form
      * and custom validation messages. Returns all validated responses.
      * @param form The HTMLFormElement being validated
+     * @param schemata The form schemata
      * @param config (optional) Validation configuration
      * @param messages (optional) Custom error messages
      * @return {Object|Boolean} Returns all validated responses as an Object, or false if validation failed
      */
-    Survana.Validation.Validate = function (form, config, messages) {
+    Survana.Validation.Validate = function (form, schemata, config, messages) {
 
         if (!form) {
             throw new Error('Invalid validation form supplied to Survana.Validate');
