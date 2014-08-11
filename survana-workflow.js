@@ -112,7 +112,9 @@ if (!window.Survana) {
             btn.setAttribute('disabled', 'disabled');
         }
 
-        var response = Survana.Validation.Validate(document.forms[0]);
+        var form_id = document.forms[0].id,
+            schemata = Survana.Schema[form_id],
+            response = Survana.Validation.Validate(document.forms[0], schemata);
 
         //if validation succeeds, save the response and go to the next form
         if (response) {

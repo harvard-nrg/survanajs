@@ -86,8 +86,11 @@
         Assert: assert,
         Error: error,
         Log: log,
-        Warn: warn
+        Warn: warn,
 
         //Switches
+
+        //Schema
+        Schema: {}
     };
 })(window, document);
