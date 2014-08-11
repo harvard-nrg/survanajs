@@ -290,52 +290,54 @@ if (!window.Survana) {
         elements = group_elements_by_name(form.elements);
 
         var is_form_valid = true,
+            field_name,
             result = {};
 
         //loop through all known fields
-        for (field in config) {
-            if (!config.hasOwnProperty(field)) {
-                continue;
-            }
-
-            field_config = config[field];
-
-            //skip fields with no type information
-            if (!field_config.type) {
+        for (field_name in schemata) {
+            if (!schemata.hasOwnProperty(field_name)) {
                 continue;
             }
 
             //find the controls responsible for this field
-            group = elements[field];
+            group = elements[field_name];
             if (group === undefined || !group) {
                 continue;
             }
 
-            values = get_values_from_group(group, field_config.type);
+            //aggregate the values in the group
+            values = get_values_from_group(group, schemata[field_name].type);
 
-            is_valid = true;
-            //check all user-specified constraints
-            for (constraint in field_config) {
-                if (!field_config.hasOwnProperty(constraint) || !Survana.Validation.Constraints[constraint]) {
-                    continue;
+
+            field_config = config[field_name];
+
+            if (field_config) {
+                is_valid = true;
+                //check all user-specified constraints
+                for (constraint in field_config) {
+                    if (!field_config.hasOwnProperty(constraint) || !Survana.Validation.Constraints[constraint]) {
+                        continue;
+                    }
+
+                    //verify constraint
+                    if (!Survana.Validation.Constraints[constraint](values, field_config[constraint])) {
+                        console.log('Constraint', constraint, '=', field_config[constraint], 'failed validation; values=', values);
+                        invalid(field, field_config, constraint);
+                        is_valid = false;
+                        break;
+                    }
                 }
 
-                //verify constraint
-                if (!Survana.Validation.Constraints[constraint](values, field_config[constraint])) {
-                    console.log('Constraint', constraint, '=', field_config[constraint], 'failed validation; values=', values);
-                    invalid(field, field_config, constraint);
-                    is_valid = false;
-                    break;
+                //mark this field as valid
+                if (is_valid) {
+                    valid(field, field_config);
+                    result[field] = values;
                 }
-            }
 
-            //mark this field as valid
-            if (is_valid) {
-                valid(field, field_config);
+                is_form_valid = is_form_valid && is_valid;
+            } else {
                 result[field] = values;
             }
-
-            is_form_valid = is_form_valid && is_valid;
         }
 
         if (is_form_valid) {
