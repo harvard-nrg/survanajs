@@ -322,7 +322,7 @@ if (!window.Survana) {
                     //verify constraint
                     if (!Survana.Validation.Constraints[constraint](values, field_config[constraint])) {
                         console.log('Constraint', constraint, '=', field_config[constraint], 'failed validation; values=', values);
-                        invalid(field, field_config, constraint);
+                        invalid(field_name, field_config, constraint);
                         is_valid = false;
                         break;
                     }
@@ -330,13 +330,13 @@ if (!window.Survana) {
 
                 //mark this field as valid
                 if (is_valid) {
-                    valid(field, field_config);
-                    result[field] = values;
+                    valid(field_name, field_config);
+                    result[field_name] = values;
                 }
 
                 is_form_valid = is_form_valid && is_valid;
             } else {
-                result[field] = values;
+                result[field_name] = values;
             }
         }
 
