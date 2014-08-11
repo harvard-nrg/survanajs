@@ -57,19 +57,19 @@
     }
 
     function assert(cond, obj) {
-        console.assert.apply(this, arguments);
+        console.assert(cond,obj);
     }
 
     function log(obj) {
-        console.log.apply(this, arguments);
+        console.log(obj);
     }
 
     function warn(obj) {
-        console.warn.apply(this, arguments);
+        console.warn(obj);
     }
 
     function error(obj) {
-        console.error.apply(this, arguments);
+        console.error(obj);
     }
 
     //API
