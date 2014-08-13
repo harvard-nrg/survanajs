@@ -436,6 +436,7 @@ var BootstrapEngine = function (doc) {
             if (field.equalize) {
                 row_label_class += ' equalized';
             }
+
             row_label.setAttribute('class', row_label_class);
             _size(row_label, null, fcol_width);
 
@@ -470,7 +471,7 @@ var BootstrapEngine = function (doc) {
             control_row = doc.createElement('div');
             control_row.setAttribute('class', 'row');
 
-            var row_id = field.rows[i].id;
+            var row_id = field.rows[i].id || field.id + ":" + (i + 1);
 
             //create a control for each column
             for (j = 1; j < field.columns.length; ++j) {
@@ -999,7 +1000,7 @@ var BootstrapEngine = function (doc) {
 
         return container || elem;
     }
-
+    
     // <question id="%QID%"><div class="form-group"> ... </div></question>
     function question(field, form) {
         var q, form_group, row, label, cwrap, elem, sizes;
@@ -1041,7 +1042,6 @@ var BootstrapEngine = function (doc) {
         if (label) {
             row.appendChild(label);
         }
-
 
         row.appendChild(cwrap);
 
