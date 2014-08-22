@@ -24,15 +24,10 @@ if (!window.Survana) {
             console.error('Survana Storage is not available.');
             return;
         }
-
-        if (!Survana.Queue) {
-            console.error('Survana Queue is not available.');
-            return;
-        }
     }
 
     var context = {
-        workflow: {},
+        workflow: [],
         current: 0,
         start: 0,
         completed: false,
@@ -54,6 +49,7 @@ if (!window.Survana) {
         Survana.Storage.Get(context, function (result) {
             context = result;
             context.current |= 0; //convert 'current' to a number
+            set_progress(context.current, context.workflow.length);
         }, on_storage_error);
     }
 
@@ -66,6 +62,29 @@ if (!window.Survana) {
 
         //call the onLoad function
         on_form_loaded();
+    }
+
+    function set_progress(current, max) {
+        var ptext_el = document.getElementById('current-progress'),
+            progress_bar = document.querySelector('.progress-bar'),
+            btnNext = document.getElementById('btnNext');
+
+        if (!max) {
+            ptext_el.innerHTML = '0 of 0';
+            progress_bar.style.width = '0';
+            btnNext.style.visibility = 'hidden';
+        } else {
+            ptext_el.innerHTML = (current + 1) + " of " + (max + 1);
+            progress_bar.style.width = ((current + 1.0) / (max + 1.0)) + '%';
+            btnNext.style.visibility = 'visible';
+        }
+
+        if (current === max) {
+            btnNext.innerHTML = 'Finish';
+        } else {
+            btnNext.innerHTML = 'Next';
+        }
+
     }
 
     /** Increments the current form index, saves it into the Storage and loads the next URL.
@@ -118,14 +137,13 @@ if (!window.Survana) {
 
         //if validation succeeds, save the response and go to the next form
         if (response) {
-            //don't do anything in designer mode if validation suceeded
+            //don't do anything in designer mode if validation succeeded
             if (Survana.DesignerMode) {
                 return;
             }
 
             //Store the response
             Survana.Queue.Add(response, function (queue) {
-
                 console.log('response queue', queue);
                 Survana.Queue.Send(context['store-url'], goto_next_form, on_queue_send_error);
             }, on_storage_error);
@@ -160,10 +178,16 @@ if (!window.Survana) {
         }, on_storage_error);
     }
 
+    function set_context(c) {
+        context = c;
+        set_progress(context.current, context.workflow.length);
+    }
+
     //Workflow API
     Survana.Workflow = {
         NextPage: next_page,
-        FinishSurvey: finish_survey
+        FinishSurvey: finish_survey,
+        SetContext: set_context
     };
 
     //register an onReady handler, i.e. $(document).ready(). Caveat: does not support older versions of IE

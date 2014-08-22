@@ -423,6 +423,8 @@ var BootstrapEngine = function (doc) {
                 }
             }
         }
+        
+        var labelHtml = "";
 
         //loop over all user-supplied rows
         for (i = 0; i < field.rows.length; ++i) {
@@ -439,12 +441,19 @@ var BootstrapEngine = function (doc) {
 
             row_label.setAttribute('class', row_label_class);
             _size(row_label, null, fcol_width);
+            
+            
 
-            //prepend numbers, if desired
+            //render final html for label, and prepend numbers, if necessary
+            //reusing fields.rows[i].html instead of labelHtml causes issues
+            //when this form is rendered multiple times
             if (field.numbers) {
-                field.rows[i].html = (i + 1) + ". " + (field.rows[i].html || "");
+                labelHtml = (i + 1) + ". " + (field.rows[i].html || "");
+            } else {
+                labelHtml = field.rows[i].html || "";
             }
-            _html(row_label, field.rows[i]);
+
+            _html(row_label, field.rows[i], labelHtml);
 
             row.appendChild(row_label);
 

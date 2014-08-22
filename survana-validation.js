@@ -18,8 +18,7 @@ if (!window.Survana) {
 
     /** Extracts validation configuration from all questions.
      * @param form {Object} The form JSON
-     * @returns {String}    The string representation of an Object whose keys are question IDs and whose values are
-     *                      validation parameters.
+     * @returns {Object}
      */
     Survana.Validation.ExtractConfiguration = function (form) {
 
@@ -43,7 +42,7 @@ if (!window.Survana) {
             }
         }
 
-        return JSON.stringify(config)
+        return config;
     };
 
     Survana.Validation.SetConfiguration = function (form, config, messages) {
