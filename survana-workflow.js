@@ -61,9 +61,11 @@ if (!window.Survana) {
         document.removeEventListener("DOMContentLoaded", on_dom_content_loaded, false);
 
         //call the onLoad function
-        on_form_loaded();
+        Survana.Workflow.OnPageLoad();
     }
 
+    //TODO: this should call methods on Survana.Theme instead of assuming these buttons exist
+    //and that these CSS classes exist.
     function set_progress(current, max) {
         var ptext_el = document.getElementById('current-progress'),
             progress_bar = document.querySelector('.progress-bar'),
@@ -74,15 +76,19 @@ if (!window.Survana) {
             progress_bar.style.width = '0';
             btnNext.style.visibility = 'hidden';
         } else {
-            ptext_el.innerHTML = (current + 1) + " of " + (max + 1);
-            progress_bar.style.width = ((current + 1.0) / (max + 1.0)) + '%';
+            ptext_el.innerHTML = (current + 1) + " of " + max;
+            progress_bar.style.width = (((current + 1.0) / max) * 100.0) + '%';
             btnNext.style.visibility = 'visible';
         }
 
-        if (current === max) {
-            btnNext.innerHTML = 'Finish';
+        if ((current + 1) === max) {
+            btnNext.firstChild.innerHTML = 'Finish';
+            btnNext.classList.remove('btn-danger');
+            btnNext.classList.add('btn-success');
         } else {
-            btnNext.innerHTML = 'Next';
+            btnNext.firstChild.innerHTML = 'Next';
+            btnNext.classList.remove('btn-success');
+            btnNext.classList.add('btn-danger');
         }
 
     }
@@ -184,14 +190,27 @@ if (!window.Survana) {
     }
 
     //Workflow API
-    Survana.Workflow = {
+    var Workflow = {
+        OnPageLoad: on_form_loaded,
         NextPage: next_page,
         FinishSurvey: finish_survey,
-        SetContext: set_context
+        SetContext: set_context,
+        SetProgress: set_progress
     };
 
-    //register an onReady handler, i.e. $(document).ready(). Caveat: does not support older versions of IE
-    if (!Survana.DesignerMode) {
-        document.addEventListener("DOMContentLoaded", on_dom_content_loaded);
+    //merge with any pre-existing Survana.Workflow
+    Survana.Workflow = Survana.Workflow || {};
+
+    for (var p in Workflow) {
+        if (!Workflow.hasOwnProperty(p)) {
+            continue;
+        }
+
+        if (Survana.Workflow[p] === undefined || Survana.Workflow[p] === null) {
+            Survana.Workflow[p] = Workflow[p];
+        }
     }
+
+    //register an onReady handler, i.e. $(document).ready(). Caveat: does not support older versions of IE
+    document.addEventListener("DOMContentLoaded", on_dom_content_loaded);
 }(window.Survana));
