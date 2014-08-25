@@ -73,7 +73,7 @@
     }
 
     //API
-    window.Survana = {
+    var Survana = {
 
         //Properties
         ScriptPath: detect_script_path('survana.js'),
@@ -93,4 +93,16 @@
         //Schema
         Schema: {}
     };
+
+    window.Survana = window.Survana || {};
+
+    for (var p in Survana) {
+        if (!Survana.hasOwnProperty(p)) {
+            continue;
+        }
+
+        if (window.Survana[p] === undefined || window.Survana[p] === null) {
+            window.Survana[p] = Survana[p];
+        }
+    }
 })(window, document);
