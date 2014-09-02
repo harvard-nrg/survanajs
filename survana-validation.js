@@ -80,13 +80,45 @@ window.Survana = window.Survana || {};
     };
 
     /* constraint: function (values, target, groups) { }
-        @param values {Array} List of values to validate
-        @param constraint value {*} The constraint value specified in the validation schema
-        @param groups {Object} All known values in the form, grouped by their question ID
+     @param values {Array} List of values to validate
+     @param constraint value {*} The constraint value specified in the validation schema
+     @param fields {Object} All known values in the form, grouped by their question ID
      */
     Survana.Validation.Constraints = {
-        'equal': function (values, target, groups) {
-            console.log('equal', arguments);
+        'equal': function (values, target, fields) {
+            var target_field,
+                target_values,
+                i;
+
+            if (values === undefined || values === null) {
+                return false;
+            }
+
+            target_field = fields[target];
+            if (!target_field) {
+                Survana.Error('Field "' + target + '" does not exist.');
+                return false;
+            }
+
+            target_values = Survana.ValuesFromGroup(target_field);
+            if (values.length !== target_values.length) {
+                return false;
+            }
+
+            //stringify all the values from 'target_values'
+            for (i = 0; i < target_values.length; ++i) {
+                target_values[i] = String(target_values[i]);
+            }
+
+            //search for each item from 'values' in 'target_values'
+            //alternate implementation: sort both arrays and compare items with 1 loop
+            for (i = 0; i < values.length; ++i) {
+                //if even 1 item could not be found, the constrained failed
+                if (target_values.indexOf(String(values[i])) < 0) {
+                    return false;
+                }
+            }
+
             return true;
         },
         optional: function (values, is_optional) {
@@ -154,35 +186,6 @@ window.Survana = window.Survana || {};
         }
     };
 
-    //returns the value of an element based on its declared field type
-    function get_value_by_type(element, field_type) {
-        //prefer to use field_type as the type of the field represented by 'element'
-        switch (field_type) {
-            default:
-                break; //todo: implement custom components
-        }
-
-        switch (element.tagName.toLowerCase()) {
-            case 'input':
-                switch (element.getAttribute('type')) {
-                    case 'radio':
-                    case 'checkbox':
-                        if (element.checked) {
-                            return element.value;
-                        }
-                        return undefined;
-                    default:
-                        return element.value;
-                }
-                break;
-            case 'button':
-            case 'select':
-                return element.value;
-            default:
-                return undefined;
-        }
-    }
-
     function invalid(field, constraint_name, constraint_value, src_input) {
         var message = (Survana.Validation.Messages[constraint_name] &&
                 Survana.Validation.Messages[constraint_name](constraint_value)) ||
@@ -217,171 +220,98 @@ window.Survana = window.Survana || {};
         }
     }
 
+
     /**
-     * Validate <form> elements, based on a validation configuration pre-built when publishing the form
-     * and custom validation messages. Returns all validated responses.
-     * @param form The HTMLFormElement being validated
-     * @param schemata The form schemata
-     * @param config (optional) Validation configuration
-     * @param messages (optional) Custom error messages
-     * @return {Object|Boolean} Returns all validated responses as an Object, or false if validation failed
+     * Validates all the constraints of a single field. Calls invalid() if validation fails.
+     * @param field {Object} The Schema field to validate
+     * @param elements {Object} All form elements grouped by name
+     * @returns {Boolean} False if validation fails, Group values otherwise
      */
-    Survana.Validation.Validate = function (form, schemata, config, messages) {
+    Survana.Validation.ValidateField = function (field, elements) {
+        var result = false,
+            //find the controls responsible for this field
+            group = elements[field.id],
+            constraint_name,
+            constraint_value,
+            values;
 
-        if (!form) {
-            throw new Error('Invalid validation form supplied to Survana.Validate');
+        if (!group) {
+            return false;
         }
 
-        if (!config && validation_config[form.id]) {
-            config = validation_config[form.id].config;
-        }
+        //aggregate the values in the group
+        values = Survana.ValuesFromGroup(group, field.type);
 
-        if (!config) {
-            throw new Error('Invalid validation configuration supplied to Survana.Validate');
-        } else {
-            //cache this configuration object
-            Survana.Validation.SetConfiguration(form.id, config, messages);
-        }
-
-        function group_elements_by_name(elements) {
-            var result = {},
-                el,
-                name;
-
-            for (var i = 0; i < elements.length; ++i) {
-                el = elements[i];
-                name = el.getAttribute('name');
-
-                if (!name) {
-                    continue;
-                }
-
-                //skip input element with type 'hidden'
-                if (el.getAttribute('type') === 'hidden') {
-                    continue;
-                }
-
-                if (result[name] === undefined) {
-                    result[name] = [el];
-                } else {
-                    result[name].push(el);
-                }
-            }
-
-            return result;
-        }
-
-        function get_values_from_group(group, field_type) {
-            var result = [],
-                value;
-
-            if (!group) {
-                return result;
-            }
-
-            for (var i = 0; i < group.length; ++i) {
-                //skip elements marked as 'do not validate'
-                if (group[i].classList.contains(Survana.Validation.NO_VALIDATION)) {
-                    continue;
-                }
-
-                value = get_value_by_type(group[i], field_type);
-                if (value !== undefined) {
-                    result.push(value);
-                }
-            }
-
-            return result;
-        }
-
-        /**
-         * Validates all the constraints of a single field. Calls invalid() if validation fails.
-         * @param name {String} Field name (aka schema id)
-         * @param type {String} Field type (aka schema type)
-         * @param validation_config {Object} Field validation (aka schema validation)
-         * @param elements {Object} All form elements grouped by name
-         * @returns {false|Array} False if validation fails, Group values otherwise
-         */
-        function validate_field(field, elements) {
-           var result = false,
-               //find the controls responsible for this field
-               group = elements[name],
-               constraint_name,
-               constraint_value;
-
-            if (!group) {
-                return false;
-            }
-
-            //aggregate the values in the group
-            values = get_values_from_group(group, field.type);
-
-            //check all user-specified constraints
-            for (constraint_name in field.validation) {
-                if (!config.hasOwnProperty(constraint)) {
-                    continue;
-                }
-
-                if (!Survana.Validation.Constraints[constraint_name]) {
-                    Survana.Error("Unknown validation constraint:", constraint_name);
-                }
-
-                constraint_value = validation_config[constraint_name];
-
-                //verify constraint
-                if (!Survana.Validation.Constraints[constraint_name](values, constraint_value, elements)) {
-                    console.log('Constraint', constraint_name, '=', constraint_value, 'failed validation; values=', values, 'elements=', elements);
-                    invalid(name, constraint_name, constraint_value);
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        var field_name, field_type, field_config, elements, values, is_valid;
-
-        elements = group_elements_by_name(form.elements);
-
-        var is_form_valid = true,
-            result = {};
-
-        //loop through all known fields
-        for (field_name in schemata) {
-            if (!schemata.hasOwnProperty(field_name)) {
+        //check all user-specified constraints
+        for (constraint_name in field.validation) {
+            if (!field.validation.hasOwnProperty(constraint_name)) {
                 continue;
             }
 
-            var field = schemata[field_name];
+            if (!Survana.Validation.Constraints[constraint_name]) {
+                Survana.Error("Unknown validation constraint:", constraint_name);
+                return false;
+            }
 
-            console.log('field=', field);
+            constraint_value = field.validation[constraint_name];
 
-            field_config = config[field_name];
-            field_type = schemata[field_name].type;
-
-            if (field_config) {
-
-                validate_field(field_name, field_type, field_config, elements);
-
-                //mark this field as valid
-                if (is_valid) {
-                    valid(field_name, field_config);
-                    result[field_name] = values;
-                }
-
-                is_form_valid = is_form_valid && is_valid;
-            } else {
-                result[field_name] = values;
+            //verify constraint
+            if (!Survana.Validation.Constraints[constraint_name](values, constraint_value, elements)) {
+                console.log('Constraint', constraint_name, '=', constraint_value, 'failed validation; values=', values, 'elements=', elements);
+                invalid(field.id, constraint_name, constraint_value);
+                return false;
             }
         }
 
-        console.log('validation result=', is_form_valid, result);
+        //mark the field as valid
+        valid(field);
 
-        if (is_form_valid) {
-            return result;
+        return true;
+    };
+
+    /**
+     * Validate <form> elements, based on a validation configuration pre-built when publishing the form
+     * and custom validation messages. Returns all validated responses.
+     * @param form {HTMLFormElement} The HTMLFormElement being validated
+     * @param schemata {Object} (optional) The form schemata
+     * @param messages {Object} (optional) Custom error messages
+     * @return {Boolean} Returns all validated responses as an Object, or false if validation failed
+     */
+    Survana.Validation.Validate = function (form, schemata, messages) {
+        var field,
+            elements,
+            values,
+            i,
+            result;
+
+        if (!form) {
+            Survana.Error('No validation form supplied to Survana.Validate');
+            return false;
         }
 
-        return false;
+        //if no schema was provided, attempt to fetch it from Survana.Schema
+        schemata = schemata || Survana.Schema[form.id];
+        if (!schemata) {
+            Survana.Error('No Schema found for form ' + form.id);
+            return false;
+        }
+
+        //group all HTMLElements by their name attribute
+        elements = Survana.GroupElements(form);
+
+        //assume the form is valid
+        result = true;
+
+        //loop through all known fields
+        for (i = 0; i < schemata.fields.length; ++i) {
+            field = schemata.fields[i];
+
+            if (!Survana.Validation.ValidateField(field, elements)) {
+                result = false;
+            }
+        }
+
+        return result;
     };
 
     /** onblur event handler

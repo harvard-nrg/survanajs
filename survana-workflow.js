@@ -11,12 +11,9 @@ Dependencies:   survana-storage.js
 */
 
 "use strict";
+window.Survana = window.Survana || {};
 
-if (!window.Survana) {
-    window.Survana = {};
-}
-
-(function (Survana) {
+(function (document, Survana) {
 
     //when running the studies, make sure that all dependencies are available
     if (!Survana.DesignerMode) {
@@ -139,7 +136,14 @@ if (!window.Survana) {
 
         var form_id = document.forms[0].id,
             schemata = Survana.Schema[form_id],
-            response = Survana.Validation.Validate(document.forms[0], schemata);
+            response;
+
+        if (!schemata) {
+            Survana.Error('Cannot validate form', form_id, ': no schemata');
+            return;
+        }
+
+        response = Survana.Validation.Validate(document.forms[0], schemata);
 
         //if validation succeeds, save the response and go to the next form
         if (response) {
@@ -213,4 +217,4 @@ if (!window.Survana) {
 
     //register an onReady handler, i.e. $(document).ready(). Caveat: does not support older versions of IE
     document.addEventListener("DOMContentLoaded", on_dom_content_loaded);
-}(window.Survana));
+}(document, window.Survana));

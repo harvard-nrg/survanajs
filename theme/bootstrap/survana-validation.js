@@ -4,14 +4,13 @@
 
 "use strict";
 
-if (!window.Survana) {
-    window.Survana = {};
-}
+window.Survana = window.Survana || {};
 
 (function (Survana) {
-    if (!Survana.Theme) {
-        Survana.Theme = {};
-    }
+
+    Survana.Validation = Survana.Validation || {};
+
+    /* THEME-BASED VALIDATION */
 
     var messages = {};
 
@@ -25,8 +24,9 @@ if (!window.Survana) {
         }
 
         //hide the error message
-        Survana.Theme.Current.HideValidationMessage(document.getElementById(q_id));
+        hide_validation_message(document.getElementById(q_id));
 
+        //call back into the base library
         Survana.Validation.Skip(q_id);
 
         return false;
@@ -56,7 +56,7 @@ if (!window.Survana) {
         return errdiv;
     }
 
-    Survana.Theme.ShowValidationMessage = function (question, message) {
+    function show_validation_message(question, message) {
         var q_id = question.getAttribute('id'),
             err_el;
 
@@ -76,9 +76,9 @@ if (!window.Survana) {
         //assume the 'form-group' is the last child of the <question>
         //add .has-error to it
         question.lastChild.classList.add('has-error');
-    };
+    }
 
-    Survana.Theme.HideValidationMessage = function (question) {
+    function hide_validation_message(question) {
         var q_id = question.getAttribute('id'),
             err_el,
             i;
@@ -89,4 +89,7 @@ if (!window.Survana) {
 
         question.lastChild.classList.remove('has-error');
     }
+
+    Survana.Validation.ShowMessage = show_validation_message;
+    Survana.Validation.HideMessage = hide_validation_message;
 }(window.Survana));
