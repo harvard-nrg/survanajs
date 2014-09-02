@@ -4,14 +4,12 @@
 
 "use strict";
 
-if (!window.Survana) {
-    window.Survana = {};
-}
+window.Survana = window.Survana || {};
 
-(function (Survana) {
+(function (document, Survana) {
     var validation_config = {};
 
-    Survana.Validation = {};
+    Survana.Validation = Survana.Validation || {};
 
     Survana.Validation.NO_VALIDATION = 's-no-validation';
     Survana.Validation.INVALID = 's-invalid';
@@ -45,8 +43,15 @@ if (!window.Survana) {
         return config;
     };
 
-    Survana.Validation.SetConfiguration = function (form, config, messages) {
-        validation_config[form.id] = {
+    /**
+     * Caches the configuration and messages of a form based on its ID
+     * @param form_id {String} ID of the form
+     * @param config {Object} Validation configuration
+     * @param messages {Object} (optional) Validation messages
+     * @constructor
+     */
+    Survana.Validation.SetConfiguration = function (form_id, config, messages) {
+        validation_config[form_id] = {
             config: config,
             messages: messages || Survana.Validation.Messages
         };
@@ -74,8 +79,13 @@ if (!window.Survana) {
         }
     };
 
+    /* constraint: function (values, target, groups) { }
+        @param values {Array} List of values to validate
+        @param constraint value {*} The constraint value specified in the validation schema
+        @param groups {Object} All known values in the form, grouped by their question ID
+     */
     Survana.Validation.Constraints = {
-        'equal': function (values, target) {
+        'equal': function (values, target, groups) {
             console.log('equal', arguments);
             return true;
         },
@@ -144,6 +154,69 @@ if (!window.Survana) {
         }
     };
 
+    //returns the value of an element based on its declared field type
+    function get_value_by_type(element, field_type) {
+        //prefer to use field_type as the type of the field represented by 'element'
+        switch (field_type) {
+            default:
+                break; //todo: implement custom components
+        }
+
+        switch (element.tagName.toLowerCase()) {
+            case 'input':
+                switch (element.getAttribute('type')) {
+                    case 'radio':
+                    case 'checkbox':
+                        if (element.checked) {
+                            return element.value;
+                        }
+                        return undefined;
+                    default:
+                        return element.value;
+                }
+                break;
+            case 'button':
+            case 'select':
+                return element.value;
+            default:
+                return undefined;
+        }
+    }
+
+    function invalid(field, constraint_name, constraint_value, src_input) {
+        var message = (Survana.Validation.Messages[constraint_name] &&
+                Survana.Validation.Messages[constraint_name](constraint_value)) ||
+                Survana.Validation.Messages.invalid,
+            question = document.getElementById(field);
+
+        if (!question) {
+            console.error('No such question:', field);
+            return;
+        }
+
+        question.classList.add(Survana.Validation.INVALID);
+
+        //call the theme's error message handler
+        if (Survana.Validation.ShowMessage) {
+            Survana.Validation.ShowMessage(question, message, src_input);
+        }
+    }
+
+    function valid(field) {
+        var question = document.getElementById(field);
+
+        if (!question) {
+            console.error('No such question:', field);
+            return;
+        }
+
+        question.classList.remove(Survana.Validation.INVALID);
+
+        if (Survana.Validation.HideMessage) {
+            Survana.Validation.HideMessage(question);
+        }
+    }
+
     /**
      * Validate <form> elements, based on a validation configuration pre-built when publishing the form
      * and custom validation messages. Returns all validated responses.
@@ -167,7 +240,7 @@ if (!window.Survana) {
             throw new Error('Invalid validation configuration supplied to Survana.Validate');
         } else {
             //cache this configuration object
-            Survana.Validation.SetConfiguration(form, config, messages);
+            Survana.Validation.SetConfiguration(form.id, config, messages);
         }
 
         function group_elements_by_name(elements) {
@@ -180,11 +253,6 @@ if (!window.Survana) {
                 name = el.getAttribute('name');
 
                 if (!name) {
-                    continue;
-                }
-
-                //skip elements marked as 'do not validate'
-                if (el.classList.contains(Survana.Validation.NO_VALIDATION)) {
                     continue;
                 }
 
@@ -203,35 +271,6 @@ if (!window.Survana) {
             return result;
         }
 
-        //returns the value of an element based on its declared field type
-        function get_value_by_type(element, field_type) {
-            //prefer to use field_type as the type of the field represented by 'element'
-            switch (field_type) {
-                default:
-                    break; //todo: implement custom components
-            }
-
-            switch (element.tagName.toLowerCase()) {
-                case 'input':
-                    switch (element.getAttribute('type')) {
-                        case 'radio':
-                        case 'checkbox':
-                            if (element.checked) {
-                                return element.value;
-                            }
-                            return undefined;
-                        default:
-                            return element.value;
-                    }
-                    break;
-                case 'button':
-                case 'select':
-                    return element.value;
-                default:
-                    return undefined;
-            }
-        }
-
         function get_values_from_group(group, field_type) {
             var result = [],
                 value;
@@ -241,6 +280,11 @@ if (!window.Survana) {
             }
 
             for (var i = 0; i < group.length; ++i) {
+                //skip elements marked as 'do not validate'
+                if (group[i].classList.contains(Survana.Validation.NO_VALIDATION)) {
+                    continue;
+                }
+
                 value = get_value_by_type(group[i], field_type);
                 if (value !== undefined) {
                     result.push(value);
@@ -250,46 +294,56 @@ if (!window.Survana) {
             return result;
         }
 
-        function invalid(field, field_config, constraint, src_input) {
-            var message = (Survana.Validation.Messages[constraint] &&
-                    Survana.Validation.Messages[constraint](field_config[constraint])) ||
-                    Survana.Validation.Messages.InvalidField,
-                question = document.getElementById(field);
+        /**
+         * Validates all the constraints of a single field. Calls invalid() if validation fails.
+         * @param name {String} Field name (aka schema id)
+         * @param type {String} Field type (aka schema type)
+         * @param validation_config {Object} Field validation (aka schema validation)
+         * @param elements {Object} All form elements grouped by name
+         * @returns {false|Array} False if validation fails, Group values otherwise
+         */
+        function validate_field(field, elements) {
+           var result = false,
+               //find the controls responsible for this field
+               group = elements[name],
+               constraint_name,
+               constraint_value;
 
-            if (!question) {
-                console.error('No such question:', field);
-                return;
+            if (!group) {
+                return false;
             }
 
-            question.classList.add(Survana.Validation.INVALID);
+            //aggregate the values in the group
+            values = get_values_from_group(group, field.type);
 
-            //call the theme's error message handler
-            if (Survana.Theme && Survana.Theme.Current && Survana.Theme.Current.ShowValidationMessage) {
-                Survana.Theme.Current.ShowValidationMessage(question, message, src_input);
+            //check all user-specified constraints
+            for (constraint_name in field.validation) {
+                if (!config.hasOwnProperty(constraint)) {
+                    continue;
+                }
+
+                if (!Survana.Validation.Constraints[constraint_name]) {
+                    Survana.Error("Unknown validation constraint:", constraint_name);
+                }
+
+                constraint_value = validation_config[constraint_name];
+
+                //verify constraint
+                if (!Survana.Validation.Constraints[constraint_name](values, constraint_value, elements)) {
+                    console.log('Constraint', constraint_name, '=', constraint_value, 'failed validation; values=', values, 'elements=', elements);
+                    invalid(name, constraint_name, constraint_value);
+                    return false;
+                }
             }
+
+            return true;
         }
 
-        function valid(field) {
-            var question = document.getElementById(field);
-
-            if (!question) {
-                console.error('No such question:', field);
-                return;
-            }
-
-            question.classList.remove(Survana.Validation.INVALID);
-
-            if (Survana.Theme && Survana.Theme.Current && Survana.Theme.Current.HideValidationMessage) {
-                Survana.Theme.Current.HideValidationMessage(question);
-            }
-        }
-
-        var field, field_config, constraint, elements, group, values, is_valid;
+        var field_name, field_type, field_config, elements, values, is_valid;
 
         elements = group_elements_by_name(form.elements);
 
         var is_form_valid = true,
-            field_name,
             result = {};
 
         //loop through all known fields
@@ -298,34 +352,16 @@ if (!window.Survana) {
                 continue;
             }
 
-            //find the controls responsible for this field
-            group = elements[field_name];
-            if (group === undefined || !group) {
-                continue;
-            }
+            var field = schemata[field_name];
 
-            //aggregate the values in the group
-            values = get_values_from_group(group, schemata[field_name].type);
-
+            console.log('field=', field);
 
             field_config = config[field_name];
+            field_type = schemata[field_name].type;
 
             if (field_config) {
-                is_valid = true;
-                //check all user-specified constraints
-                for (constraint in field_config) {
-                    if (!field_config.hasOwnProperty(constraint) || !Survana.Validation.Constraints[constraint]) {
-                        continue;
-                    }
 
-                    //verify constraint
-                    if (!Survana.Validation.Constraints[constraint](values, field_config[constraint])) {
-                        console.log('Constraint', constraint, '=', field_config[constraint], 'failed validation; values=', values);
-                        invalid(field_name, field_config, constraint);
-                        is_valid = false;
-                        break;
-                    }
-                }
+                validate_field(field_name, field_type, field_config, elements);
 
                 //mark this field as valid
                 if (is_valid) {
@@ -339,6 +375,8 @@ if (!window.Survana) {
             }
         }
 
+        console.log('validation result=', is_form_valid, result);
+
         if (is_form_valid) {
             return result;
         }
@@ -347,8 +385,8 @@ if (!window.Survana) {
     };
 
     /** onblur event handler
-     * @param e {HTMLElement} The Blur event object
-     * @constructor
+     * @param el {HTMLElement} The Blur event object
+     * @param form_config {Object} (optional) Validation configuration
      */
     Survana.Validation.OnBlur = function (el, form_config) {
         console.log('onblur', el);
@@ -362,6 +400,11 @@ if (!window.Survana) {
 
         Survana.Assert(field_name, el, "Element must have a name attribute");
         Survana.Assert(form_id, el, "Element must have a data-form attribute");
+
+        if (el.classList.contains(Survana.Validation.NO_VALIDATION)) {
+            Survana.Log("No validation for", el);
+            return;
+        }
 
         if (!form_config && validation_config[form_id]) {
             form_config = validation_config[form_id].config;
@@ -388,12 +431,16 @@ if (!window.Survana) {
             }
 
             //verify constraint
-            if (!Survana.Validation.Constraints[constraint](value, field_config[constraint])) {
+            if (!Survana.Validation.Constraints[constraint](value, field_config[constraint], elements)) {
                 console.log('Constraint', constraint, '=', field_config[constraint], 'failed validation; values=', value);
                 invalid(field_name, field_config, constraint);
                 is_valid = false;
                 break;
             }
+        }
+
+        if (is_valid) {
+            valid(field_name);
         }
 
         return is_valid;
@@ -425,4 +472,42 @@ if (!window.Survana) {
             return ["Please enter a value greater than ", min, "."].join("");
         }
     };
-}(window.Survana));
+
+    Survana.Validation.OnFormLoad = function () {
+        //read any baked-in form information
+        var script_elements = document.querySelectorAll('script.schema');
+
+        if (!script_elements.length) {
+            return;
+        }
+
+        for (var i = 0; i < script_elements.length; ++i) {
+            var script = script_elements[i],
+                json_string = script.innerHTML,
+                info;
+
+            if (!json_string.length) {
+                continue;
+            }
+
+            try {
+                info = JSON.parse(json_string);
+            } catch (e) {
+                Survana.Error(e);
+                continue;
+            }
+
+            Survana.Validation.SetConfiguration(info.id, info.config, info.messages);
+            Survana.Schema[info.id] = info.schemata;
+        }
+    };
+
+    function on_dom_content_loaded() {
+        document.removeEventListener('DOMContentLoaded', on_dom_content_loaded);
+        Survana.Validation.OnFormLoad();
+    }
+
+    //register an onReady handler, i.e. $(document).ready(). Caveat: does not support older versions of IE
+    document.addEventListener("DOMContentLoaded", on_dom_content_loaded);
+
+}(document, window.Survana));
