@@ -10,7 +10,6 @@ window.Survana = window.Survana || {};
 
     Survana.Validation = Survana.Validation || {};
 
-    Survana.Validation.NO_VALIDATION = 's-no-validation';
     Survana.Validation.INVALID = 's-invalid';
 
     /* constraint: function (values, target, groups) { }
@@ -135,8 +134,6 @@ window.Survana = window.Survana || {};
             return;
         }
 
-        question.classList.add(Survana.Validation.INVALID);
-
         //call the theme's error message handler
         if (Survana.Validation.ShowMessage) {
             Survana.Validation.ShowMessage(question, message, src_input);
@@ -150,8 +147,6 @@ window.Survana = window.Survana || {};
             console.error('No such question:', field);
             return;
         }
-
-        question.classList.remove(Survana.Validation.INVALID);
 
         if (Survana.Validation.HideMessage) {
             Survana.Validation.HideMessage(question);
