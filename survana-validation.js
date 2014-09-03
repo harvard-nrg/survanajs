@@ -7,7 +7,6 @@
 window.Survana = window.Survana || {};
 
 (function (document, Survana) {
-    var no_validation = {};
 
     Survana.Validation = Survana.Validation || {};
 
@@ -20,23 +19,27 @@ window.Survana = window.Survana || {};
      @param fields {Object} All known values in the form, grouped by their question ID
      */
     Survana.Validation.Constraints = {
-        'equal': function (values, target, fields) {
-            var target_field,
-                target_values,
+        'equal': function (response, target, values) {
+            var target_values,
                 i;
 
-            if (values === undefined || values === null) {
+            if (response === undefined || response === null) {
                 return false;
             }
 
-            target_field = fields[target];
-            if (!target_field) {
+            target_values = values[target];
+
+            //return true on skipped responses because no validation should be performed on skipped fields
+            if (target_values === null) {
+                return true;
+            }
+
+            if (!target_values) {
                 Survana.Error('Field "' + target + '" does not exist.');
                 return false;
             }
 
-            target_values = Survana.ValuesFromGroup(target_field);
-            if (values.length !== target_values.length) {
+            if (response.length !== target_values.length) {
                 return false;
             }
 
@@ -47,9 +50,9 @@ window.Survana = window.Survana || {};
 
             //search for each item from 'values' in 'target_values'
             //alternate implementation: sort both arrays and compare items with 1 loop
-            for (i = 0; i < values.length; ++i) {
+            for (i = 0; i < response.length; ++i) {
                 //if even 1 item could not be found, the constrained failed
-                if (target_values.indexOf(String(values[i])) < 0) {
+                if (target_values.indexOf(String(response[i])) < 0) {
                     return false;
                 }
             }
@@ -159,32 +162,23 @@ window.Survana = window.Survana || {};
     /**
      * Validates all the constraints of a single field. Calls invalid() if validation fails.
      * @param field {Object} The Schema field to validate
-     * @param elements {Object} All form elements grouped by name
+     * @param values {Object} All form fields with values
      * @returns {Boolean} False if validation fails, Group values otherwise
      */
-    Survana.Validation.ValidateField = function (field, elements) {
-        var result = false,
-            //find the controls responsible for this field
-            group = elements[field.id],
+    Survana.Validation.ValidateField = function (field, values) {
+        var response = values[field.id],
             constraint_name,
-            constraint_value,
-            values;
+            constraint_value;
 
-        if (!group) {
-            return false;
-        }
-
-        if (!group[0]) {
-            return false;
-        }
-
-        //ignore any fields that have been skipped
-        if (group[0].classList.contains(Survana.NO_ANSWER)) {
+        //skipped fields
+        if (response === null) {
             return true;
         }
 
-        //aggregate the values in the group
-        values = Survana.ValuesFromGroup(group, field.type);
+        //all other fields
+        if (!response) {
+            return false;
+        }
 
         //check all user-specified constraints
         for (constraint_name in field.validation) {
@@ -200,8 +194,8 @@ window.Survana = window.Survana || {};
             constraint_value = field.validation[constraint_name];
 
             //verify constraint
-            if (!Survana.Validation.Constraints[constraint_name](values, constraint_value, elements)) {
-                console.log('Constraint', constraint_name, '=', constraint_value, 'failed validation; values=', values, 'elements=', elements);
+            if (!Survana.Validation.Constraints[constraint_name](response, constraint_value, values)) {
+                console.log('Constraint', constraint_name, '=', constraint_value, 'failed validation; response =', response, 'values =', values);
                 invalid(field.id, constraint_name, constraint_value);
                 return false;
             }
@@ -216,22 +210,15 @@ window.Survana = window.Survana || {};
     /**
      * Validate <form> elements, based on a validation configuration pre-built when publishing the form
      * and custom validation messages. Returns all validated responses.
-     * @param form {HTMLFormElement} The HTMLFormElement being validated
+     * @param form_id {HTMLFormElement} The HTMLFormElement being validated
+     * @param values {Object} All form fields with values
      * @param schemata {Object} (optional) The form schemata
-     * @param messages {Object} (optional) Custom error messages
      * @return {Boolean} Returns all validated responses as an Object, or false if validation failed
      */
-    Survana.Validation.Validate = function (form, schemata, messages) {
+    Survana.Validation.Validate = function (form_id, values, schemata) {
         var field,
-            elements,
-            values,
             i,
             result;
-
-        if (!form) {
-            Survana.Error('No validation form supplied to Survana.Validate');
-            return false;
-        }
 
         //if no schema was provided, attempt to fetch it from Survana.Schema
         schemata = schemata || Survana.Schema[form.id];
@@ -239,9 +226,6 @@ window.Survana = window.Survana || {};
             Survana.Error('No Schema found for form ' + form.id);
             return false;
         }
-
-        //group all HTMLElements by their name attribute
-        elements = Survana.GroupElements(form);
 
         //assume the form is valid
         result = true;
@@ -255,7 +239,7 @@ window.Survana = window.Survana || {};
                 continue;
             }
 
-            if (!Survana.Validation.ValidateField(field, elements)) {
+            if (!Survana.Validation.ValidateField(field, values)) {
                 //validation failed, but keep scanning to display all the fields with errors
                 result = false;
             }
@@ -266,7 +250,6 @@ window.Survana = window.Survana || {};
 
     /** onblur event handler
      * @param el {HTMLElement} The Blur event object
-     * @param form_config {Object} (optional) Validation configuration
      */
     Survana.Validation.OnBlur = function (el) {
         console.log('onblur', el);
@@ -276,19 +259,11 @@ window.Survana = window.Survana || {};
             field_name = el.getAttribute("name"),
             field,
             schemata,
-            value,
-            constraint,
-            is_valid,
-            elements,
+            values,
             i;
 
         Survana.Assert(field_name, el, "Element must have a name attribute");
         Survana.Assert(form_id, el, "Element must have a data-form attribute");
-
-        if (el.classList.contains(Survana.NO_ANSWER)) {
-            Survana.Log("No answer for", el);
-            return;
-        }
 
         //if no schema was provided, attempt to fetch it from Survana.Schema
         schemata = Survana.Schema[form_id];
@@ -315,9 +290,9 @@ window.Survana = window.Survana || {};
             return;
         }
 
-        elements = Survana.GroupElements(form_el);
+        values = Survana.FormFields(form_el, schemata);
 
-        return Survana.Validation.ValidateField(field, elements);
+        return Survana.Validation.ValidateField(field, values);
     };
 
 
