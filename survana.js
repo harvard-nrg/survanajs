@@ -88,6 +88,10 @@
                     case 'radio':
                     case 'checkbox':
                         if (element.checked) {
+                            if (element.value === Survana.NO_ANSWER) {
+                                return null;
+                            }
+
                             return element.value;
                         }
                         return undefined;
@@ -151,6 +155,11 @@
 
         for (var i = 0; i < group.length; ++i) {
             value = field_value(group[i], field_type);
+            if (value === null) {
+                result = null;
+                break;
+            }
+
             if (value !== undefined) {
                 result.push(value);
             }

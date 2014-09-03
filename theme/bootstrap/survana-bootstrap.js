@@ -527,6 +527,15 @@ var BootstrapEngine = function (doc) {
                 field.columns[j].validation = field.rows[i].validation;
                 field.columns[j].container = field.id;
 
+                if (field.columns[j].value === undefined || field.columns[j].value === null) {
+                    if (field.columns[j].noanswer) {
+                        field.columns[j].value = Survana.NO_ANSWER;
+                    } else {
+                        field.columns[j].value = j;
+                    }
+
+                }
+
                 //create the element
                 control_el = by_type(field.columns[j], field.matrix || default_matrix_type);
 
