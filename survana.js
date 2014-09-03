@@ -159,8 +159,65 @@
         return result;
     }
 
+    function no_answer(question_id) {
+        var question = document.getElementById(question_id),
+            children;
+
+        if (!question) {
+            return;
+        }
+
+        question.classList.add(Survana.NO_ANSWER);
+
+        children = question.querySelectorAll('input,select');
+
+        //mark all inputs for no validation
+        for (var i = 0; i < children.length; ++i) {
+            children[i].value = children[i].defaultValue;
+            children[i].classList.add(Survana.NO_ANSWER);
+        }
+    }
+
+    /**
+     * Returns all form fields grouped by name and their values as arrays
+     * @param form_el {HTMLFormElement} The <form> element to parse
+     */
+    function get_form_fields(form_el, schemata) {
+        var fields = {},
+            field,
+            groups = group_elements(form_el),
+            group,
+            i;
+
+        //if no schema was provided, attempt to fetch it from Survana.Schema
+        schemata = schemata || Survana.Schema[form.id];
+        if (!schemata) {
+            Survana.Error('No Schema found for form ' + form_el.id);
+            return false;
+        }
+
+        for (i = 0; i < schemata.fields.length; ++i) {
+            field = schemata.fields[i];
+            group = groups[field.id];
+            if (!group) {
+                console.log('Skipping answers for question', field.id);
+                continue;
+            }
+            if (group[0].classList.contains(Survana.NO_ANSWER)) {
+                fields[field.id] = null;
+            } else {
+                fields[field.id] = values_from_group(group);
+            }
+        }
+
+        return fields;
+    }
+
     //API
     var Survana = {
+
+        //'constants'
+        NO_ANSWER: 'no-answer',
 
         //Properties
         ScriptPath: detect_script_path('survana.js'),
@@ -171,6 +228,8 @@
         FieldValue: field_value,
         GroupElements: group_elements,
         ValuesFromGroup: values_from_group,
+        NoAnswer: no_answer,
+        FormFields: get_form_fields,
 
         //Dev methods
         Assert: assert,
@@ -196,4 +255,41 @@
             window.Survana[p] = Survana[p];
         }
     }
+
+
+    Survana.OnFormLoad = function () {
+        //read any baked-in form information
+        var script_elements = document.querySelectorAll('script.schema');
+
+        if (!script_elements.length) {
+            return;
+        }
+
+        for (var i = 0; i < script_elements.length; ++i) {
+            var script = script_elements[i],
+                json_string = script.innerHTML,
+                schemata;
+
+            if (!json_string.length) {
+                continue;
+            }
+
+            try {
+                schemata = JSON.parse(json_string);
+            } catch (e) {
+                Survana.Error(e);
+                continue;
+            }
+
+            Survana.Schema[schemata.id] = schemata;
+        }
+    };
+
+    function on_dom_content_loaded() {
+        document.removeEventListener('DOMContentLoaded', on_dom_content_loaded);
+        Survana.OnFormLoad();
+    }
+
+    //register an onReady handler, i.e. $(document).ready(). Caveat: does not support older versions of IE
+    document.addEventListener("DOMContentLoaded", on_dom_content_loaded);
 })(window, document);

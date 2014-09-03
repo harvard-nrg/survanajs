@@ -1061,16 +1061,12 @@ var BootstrapEngine = function (doc) {
     }
 
     function form(field) {
-        var elem = doc.createElement('form');
+        var elem = doc.createElement('form'),
+            form_id = field.id || 'form-' + String((new Date()).valueOf());
 
         elem.setAttribute('role', 'form');
-        //elem.setAttribute('class', 'form-vertical');
-        if (field.id) {
-            elem.setAttribute('id', field.id);
-        } else {
-            //autogenerate an id
-            elem.setAttribute('id', 'form-' + String((new Date()).valueOf()));
-        }
+        elem.setAttribute('id', form_id);
+        elem.setAttribute('name', form_id);
 
         return elem;
     }

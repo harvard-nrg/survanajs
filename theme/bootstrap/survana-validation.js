@@ -12,12 +12,14 @@ window.Survana = window.Survana || {};
 
     /* THEME-BASED VALIDATION */
 
-    var messages = {};
+    var message_els = {},
+        count = 0;
+
 
     function onSkipQuestion(e) {
         var btn = e.currentTarget,
             q_id = btn.getAttribute('data-question'),
-            q_msg = messages[q_id];
+            q_msg = message_els[q_id];
 
         if (!q_msg) {
             return false;
@@ -26,22 +28,24 @@ window.Survana = window.Survana || {};
         //hide the error message
         hide_validation_message(document.getElementById(q_id));
 
-        //call back into the base library
-        Survana.Validation.Skip(q_id);
+        //mark this question as having no answer
+        Survana.NoAnswer(q_id);
 
         return false;
     }
 
-    function newErrorMessage(question, message) {
+    function newErrorElement(question) {
         //temporary error message. this should be implemented by the current theme.
         var errdiv = document.createElement('div'),
             errmsg = document.createElement('span'),
-            q_id = question.getAttribute('id');
+            q_id = question.getAttribute('id'),
+            skipbtn;
 
         errdiv.setAttribute('class','s-error alert alert-warning');
-        errmsg.innerHTML = message;
+        errdiv.setAttribute('id', 'survana-message-' + count);
+        count++;
 
-        var skipbtn = document.createElement('button');
+        skipbtn = document.createElement('button');
         skipbtn.setAttribute('type', 'button');
         skipbtn.setAttribute('class', 'btn btn-sm btn-default');
         skipbtn.setAttribute('data-question', q_id);
@@ -61,17 +65,21 @@ window.Survana = window.Survana || {};
             err_el;
 
         //reuse a previous error message
-        if (messages[q_id]) {
-            err_el = messages[q_id];
-            err_el.firstChild.innerHTML = message;
-            err_el.classList.remove('hidden');
-        } else {
-            //create a new error message
-            err_el = newErrorMessage(question, message);
-
-            //cache the error element
-            messages[q_id] = err_el;
+        if (message_els[q_id]) {
+            err_el = document.getElementById(message_els[q_id]);
         }
+
+        //if no previous error message was found, create a new one
+        if (!err_el) {
+            //create a new error message element
+            err_el = newErrorElement(question);
+            //cache the error elementme
+            message_els[q_id] = err_el.id;
+        }
+
+        err_el.firstChild.innerHTML = message;
+        err_el.classList.remove('hidden');
+
 
         //assume the 'form-group' is the last child of the <question>
         //add .has-error to it
@@ -83,8 +91,12 @@ window.Survana = window.Survana || {};
             err_el,
             i;
 
-        if (messages[q_id]) {
-            messages[q_id].classList.add('hidden');
+        if (message_els[q_id]) {
+            err_el = document.getElementById(message_els[q_id]);
+
+            if (err_el) {
+                err_el.classList.add('hidden');
+            }
         }
 
         question.lastChild.classList.remove('has-error');
