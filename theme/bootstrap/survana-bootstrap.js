@@ -351,6 +351,12 @@ var BootstrapEngine = function (doc) {
         //matrix header row
         header.setAttribute('class', 'row matrix-header-row');
 
+        //the first label is the question label config. if one hasn't been provided,
+        //insert an empty object automatically
+        if (field.columns && (!field.columns.length || field.columns[0].html)) {
+            field.columns.unshift({});
+        }
+
         /*  push the columns to the right the same distance as the width of the first column
          the width of the rest of the columns should be the same as for the controls in each cell
          the labels in the header and on each control must match
