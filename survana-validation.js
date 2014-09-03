@@ -182,8 +182,9 @@ window.Survana = window.Survana || {};
             }
 
             if (!Survana.Validation.Constraints[constraint_name]) {
-                Survana.Error("Unknown validation constraint:", constraint_name);
-                return false;
+                Survana.Warn("Unknown validation constraint:", constraint_name);
+                //ignore unknown constraints (TODO: report constraints to author)
+                continue;
             }
 
             constraint_value = field.validation[constraint_name];
@@ -243,19 +244,27 @@ window.Survana = window.Survana || {};
         return result;
     };
 
-    /** onblur event handler
+    /** on* event handler
      * @param el {HTMLElement} The Blur event object
      */
-    Survana.Validation.OnBlur = function (el) {
-        console.log('onblur', el);
+    Survana.Validation.OnEvent = function (el) {
+        console.log('onevent', el);
 
-        var form_id = el.getAttribute("data-form"),
-            form_el = document.forms[form_id],
+        var form_el,
+            form_id,
             field_name = el.getAttribute("name"),
             field,
             schemata,
             values,
             i;
+
+        if (el.form) {
+            form_el = el.form;
+            form_id = form_el.id;
+        } else {
+            form_id = el.getAttribute('data-form');
+            form_el = document.forms[form_id];
+        }
 
         Survana.Assert(field_name, el, "Element must have a name attribute");
         Survana.Assert(form_id, el, "Element must have a data-form attribute");
@@ -310,10 +319,10 @@ window.Survana = window.Survana || {};
             return "This field requires a numeric value";
         },
         'max': function (max) {
-            return ["Please enter a value that's less than ", max, "."].join("");
+            return ["Please enter a value that's less than or equal to ", max, "."].join("");
         },
         'min': function (min) {
-            return ["Please enter a value greater than ", min, "."].join("");
+            return ["Please enter a value greater than or equal to ", min, "."].join("");
         }
     };
 }(document, window.Survana));

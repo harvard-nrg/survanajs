@@ -56,20 +56,20 @@
         return null;
     }
 
-    function assert(cond, obj) {
-        console.assert(cond, obj);
+    function assert() {
+        console.assert.apply(console, arguments);
     }
 
-    function log(obj) {
-        console.log(obj);
+    function log() {
+        console && console.log.apply(console, arguments);
     }
 
-    function warn(obj) {
-        console.warn(obj);
+    function warn() {
+        console && console.warn.apply(console, arguments);
     }
 
-    function error(obj) {
-        console.error(obj);
+    function error() {
+        console && console.error.apply(console, arguments);
     }
 
     //Element Helpers

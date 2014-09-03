@@ -204,8 +204,17 @@ var BootstrapEngine = function (doc) {
             elem.setAttribute('data-question', field.question_id);
         }
 
+        console.log("ELEMT TYPE", elem.type);
         //onblur handler
-        elem.setAttribute('onblur', 'return Survana.Validation.OnBlur(this);');
+        switch (field.type) {
+            case 'select':
+            case 'radio':
+            case 'checkbox':
+            case 'button': elem.setAttribute('onchange', 'return Survana.Validation.OnEvent(this);'); break;
+
+            default:    elem.setAttribute('onblur', 'return Survana.Validation.OnEvent(this);'); break;
+        }
+
     }
 
     function group(field) {
@@ -249,6 +258,11 @@ var BootstrapEngine = function (doc) {
 
             f = field.fields[i];
 
+            if (!f.validation) {
+                f.validation = field.validation;
+            }
+
+
             //a 'radio'-group has 'radio' fields, a 'checkbox'-group has 'checkbox'-fields, etc
             if (f.type === undefined) {
                 f.type = field.group;
@@ -278,7 +292,6 @@ var BootstrapEngine = function (doc) {
                 container.appendChild(elem);
             }
         }
-
 
         switch (field.group) {
             case 'button':
@@ -567,6 +580,7 @@ var BootstrapEngine = function (doc) {
         label.setAttribute('class', 'btn btn-default');
         _html(label, field);
         _value(elem, field.value);
+        _validation(elem, field);
 
         console.log("button field:", field);
 
@@ -618,6 +632,7 @@ var BootstrapEngine = function (doc) {
         elem.setAttribute('name', name);
         elem.setAttribute('type', 'radio');
         _value(elem, field.value);
+        _validation(elem, field);
 
         if (field['-input-label-class']) {
             label_text.setAttribute('class', field['-input-label-class']);
@@ -659,6 +674,7 @@ var BootstrapEngine = function (doc) {
         elem.setAttribute('type', 'checkbox');
 
         _value(elem, field.value);
+        _validation(elem, field);
 
         if (field['-input-label-class']) {
             label_text.setAttribute('class', field['-input-label-class']);
@@ -803,6 +819,8 @@ var BootstrapEngine = function (doc) {
                 }
             }
         }
+
+        _validation(elem, field);
 
         return elem;
     }
@@ -1067,6 +1085,7 @@ var BootstrapEngine = function (doc) {
         elem.setAttribute('role', 'form');
         elem.setAttribute('id', form_id);
         elem.setAttribute('name', form_id);
+        elem.setAttribute('novalidate', 'novalidate');
 
         return elem;
     }
