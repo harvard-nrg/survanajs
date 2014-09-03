@@ -178,6 +178,26 @@
         }
     }
 
+    function get_matrix_group(field, groups) {
+        var result = {},
+            row,
+            row_id,
+            i;
+
+        for (i = 0; i < field.rows.length; ++i) {
+            row = field.rows[i];
+            row_id = row.id || field.id + ":" + (i + 1);
+
+            if (groups[row_id]) {
+                result[row_id] = groups[row_id];
+            } else {
+                result[row_id] = null;
+            }
+        }
+
+        return result;
+    }
+
     /**
      * Returns all form fields grouped by name and their values as arrays
      * @param form_el {HTMLFormElement} The <form> element to parse
@@ -187,7 +207,9 @@
             field,
             groups = group_elements(form_el),
             group,
-            i;
+            row_id,
+            i,
+            j;
 
         //if no schema was provided, attempt to fetch it from Survana.Schema
         schemata = schemata || Survana.Schema[form.id];
@@ -198,7 +220,21 @@
 
         for (i = 0; i < schemata.fields.length; ++i) {
             field = schemata.fields[i];
+
+            //special case: matrix containers. This loops effectively unwraps the matrix
+            //and treats each question as if it were top-level
+            if (field.type === 'matrix') {
+                //iterate over each matrix row
+                for (j = 0; j < field.rows.length; ++j) {
+                    row_id = field.rows[j].id;
+                    fields[row_id] = values_from_group(groups[row_id]);
+                }
+                continue;
+            }
+
+            //all other fields
             group = groups[field.id];
+
             if (!group) {
                 console.log('Skipping answers for question', field.id);
                 continue;

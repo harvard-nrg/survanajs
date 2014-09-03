@@ -214,7 +214,12 @@ var BootstrapEngine = function (doc) {
 
             default:    elem.setAttribute('onblur', 'return Survana.Validation.OnEvent(this);'); break;
         }
+    }
 
+    function _container(elem, field) {
+        if (field.container) {
+            elem.setAttribute('data-container', field.container);
+        }
     }
 
     function group(field) {
@@ -447,9 +452,14 @@ var BootstrapEngine = function (doc) {
 
         //loop over all user-supplied rows
         for (i = 0; i < field.rows.length; ++i) {
+            //generate a row id
+            field.rows[i].id = field.rows[i].id || field.id + ":" + (i + 1);
+            var row_id = field.rows[i].id;
+
             //create a new matrix row
             row = doc.createElement('div');
-            row.setAttribute('class', 'row matrix-row');
+            row.setAttribute('class', 'row matrix-row no-skip');
+            row.setAttribute('id', row_id);
 
             //create a new row label
             row_label = doc.createElement('label');
@@ -499,7 +509,10 @@ var BootstrapEngine = function (doc) {
             control_row = doc.createElement('div');
             control_row.setAttribute('class', 'row');
 
-            var row_id = field.rows[i].id || field.id + ":" + (i + 1);
+            //make sure each row has validation information
+            if (!field.rows[i].validation && field.validation) {
+                field.rows[i].validation = field.validation;
+            }
 
             //create a control for each column
             for (j = 1; j < field.columns.length; ++j) {
@@ -511,6 +524,8 @@ var BootstrapEngine = function (doc) {
                 //id= row_id:0,1,2,...
                 field.columns[j].id = row_id + ":" + (j - 1);
                 field.columns[j].name = row_id;
+                field.columns[j].validation = field.rows[i].validation;
+                field.columns[j].container = field.id;
 
                 //create the element
                 control_el = by_type(field.columns[j], field.matrix || default_matrix_type);
@@ -588,8 +603,6 @@ var BootstrapEngine = function (doc) {
         _value(elem, field.value);
         _validation(elem, field);
 
-        console.log("button field:", field);
-
         label.appendChild(elem);
         return label;
     }
@@ -639,6 +652,7 @@ var BootstrapEngine = function (doc) {
         elem.setAttribute('type', 'radio');
         _value(elem, field.value);
         _validation(elem, field);
+        _container(elem, field);
 
         if (field['-input-label-class']) {
             label_text.setAttribute('class', field['-input-label-class']);
@@ -681,6 +695,7 @@ var BootstrapEngine = function (doc) {
 
         _value(elem, field.value);
         _validation(elem, field);
+        _container(elem, field);
 
         if (field['-input-label-class']) {
             label_text.setAttribute('class', field['-input-label-class']);

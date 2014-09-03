@@ -34,26 +34,57 @@ window.Survana = window.Survana || {};
         return false;
     }
 
+    function onHideMessage(e) {
+        var btn = e.currentTarget,
+            q_id = btn.getAttribute('data-question'),
+            q_msg = message_els[q_id];
+
+        if (!q_msg) {
+            return false;
+        }
+
+        hide_validation_message(document.getElementById(q_id));
+
+        return false;
+    }
+
     function newErrorElement(question) {
         //temporary error message. this should be implemented by the current theme.
         var errdiv = document.createElement('div'),
-            errmsg = document.createElement('span'),
+            errmsg = document.createElement('div'),
             q_id = question.getAttribute('id'),
-            skipbtn;
+            skipbtn,
+            hidebtn;
 
-        errdiv.setAttribute('class','s-error alert alert-warning');
+
+        errdiv.setAttribute('class','s-error alert alert-warning alert-dismissible');
+        errdiv.setAttribute('role', 'alert');
         errdiv.setAttribute('id', 'survana-message-' + count);
         count++;
 
-        skipbtn = document.createElement('button');
-        skipbtn.setAttribute('type', 'button');
-        skipbtn.setAttribute('class', 'btn btn-sm btn-default');
-        skipbtn.setAttribute('data-question', q_id);
-        skipbtn.innerHTML = 'Prefer Not to Answer';
-        skipbtn.addEventListener('click', onSkipQuestion);
+        if (!question.classList.contains('no-skip')) {
+            skipbtn = document.createElement('button');
+            skipbtn.setAttribute('type', 'button');
+            skipbtn.setAttribute('class', 'btn btn-xs btn-default');
+            skipbtn.setAttribute('data-question', q_id);
+            skipbtn.innerHTML = 'Prefer Not to Answer';
+            skipbtn.addEventListener('click', onSkipQuestion);
+        }
+
+        hidebtn = document.createElement('button');
+        hidebtn.setAttribute('type', 'button')
+        hidebtn.setAttribute('data-dismiss', 'alert');
+        hidebtn.setAttribute('class', 'close pull-left');
+        hidebtn.setAttribute('data-question', q_id);
+        hidebtn.addEventListener('click', onHideMessage);
+        hidebtn.innerHTML = '&times;'
 
         errdiv.appendChild(errmsg);
-        errdiv.appendChild(skipbtn);
+        if (skipbtn) {
+            errdiv.appendChild(skipbtn);
+        }
+
+        errdiv.appendChild(hidebtn);
 
         question.insertBefore(errdiv, question.firstChild);
 

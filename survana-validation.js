@@ -214,6 +214,7 @@ window.Survana = window.Survana || {};
     Survana.Validation.Validate = function (form_id, values, schemata) {
         var field,
             i,
+            j,
             result;
 
         //if no schema was provided, attempt to fetch it from Survana.Schema
@@ -229,6 +230,19 @@ window.Survana = window.Survana || {};
         //loop through all known fields
         for (i = 0; i < schemata.fields.length; ++i) {
             field = schemata.fields[i];
+
+            //special case for the matrix element: treat each row as a separate field
+            if (field.type === 'matrix') {
+                for (j = 0; j < field.rows.length; ++j) {
+                    if (!field.validation) {
+                        continue;
+                    }
+
+                    if (!Survana.Validation.ValidateField(field.rows[j], values)) {
+                        result = false;
+                    }
+                }
+            }
 
             //skip any fields that should not be validated
             if (!field.validation) {
@@ -253,9 +267,11 @@ window.Survana = window.Survana || {};
         var form_el,
             form_id,
             field_name = el.getAttribute("name"),
+            container_id = el.getAttribute('data-container'),
             field,
             schemata,
             values,
+            search_id,
             i;
 
         if (el.form) {
@@ -276,11 +292,29 @@ window.Survana = window.Survana || {};
             return;
         }
 
+        //either search for the field name or the container_id
+        if (container_id) {
+            search_id = container_id;
+        } else {
+            search_id = field_name;
+        }
+
         //locate the field in the schemata
         for (i = 0; i < schemata.fields.length; ++i) {
-            if (schemata.fields[i].id === field_name) {
+            if (schemata.fields[i].id === search_id) {
                 field = schemata.fields[i];
                 break;
+            }
+        }
+
+        //now search in the container rows
+        if (container_id) {
+            //locate the field in the schemata
+            for (i = 0; i < field.rows.length; ++i) {
+                if (field.rows[i].id === field_name) {
+                    field = field.rows[i];
+                    break;
+                }
             }
         }
 
